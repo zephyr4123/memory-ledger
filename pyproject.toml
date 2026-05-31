@@ -1,0 +1,79 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "memory-ledger"
+version = "0.1.0"
+description = "Deterministic, provenance-first, append-only memory for LLM agents on Postgres — typed intents instead of embeddings, as-of time-travel, and a human-confirmation gate for risky writes."
+readme = "README.md"
+requires-python = ">=3.12"
+license = "Apache-2.0"
+license-files = ["LICENSE", "NOTICE"]
+authors = [{ name = "The memory-ledger authors" }]
+keywords = [
+    "llm", "agent", "memory", "event-sourcing", "provenance",
+    "postgres", "time-travel", "ledger", "ai",
+]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: Apache Software License",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Database",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Typing :: Typed",
+]
+dependencies = []
+
+[project.optional-dependencies]
+psycopg = ["psycopg[binary]>=3.1"]
+dev = [
+    "psycopg[binary]>=3.1",
+    "pytest>=8.0",
+    "pytest-cov>=5.0",
+    "testcontainers[postgres]>=4.0",
+    "ruff>=0.6",
+    "mypy>=1.11",
+]
+
+[project.urls]
+Homepage = "https://github.com/your-org/memory-ledger"
+Documentation = "https://github.com/your-org/memory-ledger/tree/main/docs"
+Repository = "https://github.com/your-org/memory-ledger"
+Issues = "https://github.com/your-org/memory-ledger/issues"
+
+[project.scripts]
+memory-ledger = "memory_ledger.interface.cli:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/memory_ledger"]
+artifacts = ["src/memory_ledger/infrastructure/persistence/sql/*.sql"]
+
+[tool.hatch.build.targets.sdist]
+include = ["src/memory_ledger", "README.md", "LICENSE", "NOTICE", "docs"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM", "RUF"]
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+packages = ["memory_ledger"]
+mypy_path = "src"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = [
+    "integration: tests that require a live Postgres (via testcontainers)",
+]
+
+[tool.coverage.run]
+source = ["memory_ledger"]
+branch = true
