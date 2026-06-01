@@ -90,9 +90,17 @@
   min-height: 0;
 }
 
-/* 人卡 + 时光机 同住一张卡 (时光机被人卡"拥有") */
+/* 人卡 + 时光机 同住一张卡; 关键: 封顶 48% —— 快照再长也不许吃满整列,
+   永远给「记过的事」留出至少一半(超出就卡内滚动)。折叠后自然压扁, 让得更多。 */
 .truth {
-  flex: none;
+  flex: 0 1 auto;
+  min-height: 0;
+  max-height: 48%;
+}
+/* 「记过的事」是主视: 吃掉快照之外的全部高度 */
+.ledgerPanel {
+  flex: 1 1 0;
+  min-height: 0;
 }
 .scrubber {
   margin: 0 var(--pad) var(--pad);

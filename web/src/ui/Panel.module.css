@@ -28,3 +28,11 @@
   overflow: auto;
   min-height: 0;
 }
+/* body 作 flex 列、自身不滚 —— 内部固定头 + 滚动区各管各 (账本面板用) */
+.bodyFlow {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}

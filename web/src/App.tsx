@@ -25,6 +25,7 @@ export default function App() {
   const nameOf = (id: number) => crm.people.find((p) => p.id === id)?.full_name ?? "联系人";
 
   const [editor, setEditor] = useState<null | { mode: "create" | "edit" }>(null);
+  const [snapOpen, setSnapOpen] = useState(true);
 
   const submitContact = async (data: PersonInput) => {
     if (editor?.mode === "edit" && crm.selectedId != null) {
@@ -87,14 +88,18 @@ export default function App() {
               <PersonCard
                 person={crm.person}
                 asOf={crm.asOf}
+                collapsed={!snapOpen}
+                onToggle={() => setSnapOpen((o) => !o)}
                 onEdit={() => setEditor({ mode: "edit" })}
                 onResolve={crm.resolveBanner}
               />
-              <div className={styles.scrubber}>
-                <TimeScrubber ledger={crm.ledger} asOf={crm.asOf} onTravel={crm.travelTo} />
-              </div>
+              {snapOpen && crm.person && (
+                <div className={styles.scrubber}>
+                  <TimeScrubber ledger={crm.ledger} asOf={crm.asOf} onTravel={crm.travelTo} />
+                </div>
+              )}
             </Panel>
-            <Panel label="记过的事" className={styles.fill}>
+            <Panel label="记过的事" className={`${styles.fill} ${styles.ledgerPanel}`} bodyFlow>
               <LedgerTimeline events={crm.ledger} />
             </Panel>
           </motion.div>

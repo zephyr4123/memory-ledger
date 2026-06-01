@@ -1,10 +1,54 @@
 .card {
   display: flex;
   flex-direction: column;
-  gap: 22px;
-  padding: var(--pad);
+  gap: 16px;
+  padding: 20px var(--pad);
   border-radius: var(--r-card) var(--r-card) 0 0;
   transition: background var(--dur) var(--ease);
+}
+.body {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+/* 折叠开关: eyebrow + 雪佛龙 */
+.toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+.chev {
+  font-size: 10px;
+  color: var(--ink-faint);
+  transition: transform var(--dur) var(--ease);
+}
+.chevClosed {
+  transform: rotate(-90deg);
+}
+
+/* 折叠后的一行摘要 */
+.summary {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.sumName {
+  font-family: var(--font-display);
+  font-size: 24px;
+  font-weight: 600;
+  color: var(--ink);
+  letter-spacing: -0.01em;
+}
+.sumRest {
+  font-size: 14px;
+  color: var(--ink-dim);
+}
+.sumFlag {
+  font-size: 12px;
+  color: var(--clay-ink);
+  font-weight: 600;
 }
 /* 时光机回到过去: 整张人卡极淡陶土染色, 提示"这是旧真相" */
 .cardPast {
@@ -75,8 +119,8 @@
 }
 
 .name {
-  font-size: clamp(34px, 3.6vw, 46px);
-  line-height: 1.02;
+  font-size: clamp(30px, 3vw, 40px);
+  line-height: 1.04;
   color: var(--ink);
   letter-spacing: -0.02em;
 }
@@ -84,8 +128,8 @@
 .fields {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  row-gap: 18px;
-  column-gap: 36px;
+  row-gap: 14px;
+  column-gap: 30px;
 }
 .field {
   display: flex;

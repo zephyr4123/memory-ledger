@@ -10,6 +10,8 @@ const FIELD_KEYS: (keyof Person)[] = ["employer", "role", "location", "comm_pref
 interface Props {
   person: Person | null;
   asOf: string | null;
+  collapsed: boolean;
+  onToggle: () => void;
   onEdit: () => void;
   onResolve: (intentId: number, action: "confirm" | "reject") => void;
 }
@@ -34,7 +36,13 @@ function Field({ label, value }: { label: string; value: string | null }) {
   );
 }
 
-export function PersonCard({ person, asOf, onEdit, onResolve }: Props) {
+function summaryLine(p: Person): string {
+  const role =
+    p.role && p.employer ? `${p.role} @ ${p.employer}` : p.role || p.employer || "";
+  return [role, p.location].filter(Boolean).join(" · ");
+}
+
+export function PersonCard({ person, asOf, collapsed, onToggle, onEdit, onResolve }: Props) {
   if (!person) {
     return <div className={styles.empty}>选一个人，看看小本替你记下的。</div>;
   }
@@ -42,7 +50,10 @@ export function PersonCard({ person, asOf, onEdit, onResolve }: Props) {
   return (
     <div className={`${styles.card} ${past ? styles.cardPast : ""}`}>
       <div className={styles.topline}>
-        <span className="eyebrow">TA 现在的样子</span>
+        <button className={styles.toggle} onClick={onToggle} aria-expanded={!collapsed}>
+          <span className="eyebrow">TA 现在的样子</span>
+          <span className={`${styles.chev} ${collapsed ? styles.chevClosed : ""}`}>▾</span>
+        </button>
         <div className={styles.toplineRight}>
           {past ? (
             <span className={`${styles.state} ${styles.statePast}`} title={asOf ?? undefined}>
@@ -60,61 +71,88 @@ export function PersonCard({ person, asOf, onEdit, onResolve }: Props) {
         </div>
       </div>
 
-      <h1 className={`display ${styles.name}`}>{person.full_name ?? "还没名字"}</h1>
+      <AnimatePresence initial={false} mode="wait">
+        {collapsed ? (
+          <motion.div
+            key="sum"
+            className={styles.summary}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+          >
+            <span className={styles.sumName}>{person.full_name ?? "还没名字"}</span>
+            {summaryLine(person) && <span className={styles.sumRest}>{summaryLine(person)}</span>}
+            {person.flags.length > 0 && (
+              <span className={styles.sumFlag}>⚠ {person.flags.length}</span>
+            )}
+          </motion.div>
+        ) : (
+          <motion.div
+            key="full"
+            className={styles.body}
+            initial={{ opacity: 0, y: -6 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -6 }}
+            transition={{ duration: 0.24, ease: [0.22, 1, 0.36, 1] }}
+          >
+            <h1 className={`display ${styles.name}`}>{person.full_name ?? "还没名字"}</h1>
 
-      <div className={styles.fields}>
-        {FIELD_KEYS.map((key) => {
-          const raw = (person[key] as string | null) ?? null;
-          return (
-            <Field
-              key={key}
-              label={FIELD_LABEL[key] ?? key}
-              value={raw == null ? null : displayValue(key, raw)}
-            />
-          );
-        })}
-      </div>
-
-      {/* 拿不准的标记 —— 每条给一个"知道了"消除入口 (回看过去时不显示动作) */}
-      {!past && person.flags.length > 0 && (
-        <div className={styles.flagList}>
-          {person.flags.map((f, i) => (
-            <div key={f.intent_id ?? i} className={styles.flagItem}>
-              <span className={styles.flagIcon}>⚠</span>
-              <span className={styles.flagText}>
-                <b>{fieldLabel(f.target_field)}</b>
-                {f.flag_reason ? ` · ${f.flag_reason}` : " 这条小本拿不准"}
-              </span>
-              {f.intent_id != null && (
-                <button
-                  className={styles.flagDismiss}
-                  onClick={() => onResolve(f.intent_id as number, "reject")}
-                >
-                  知道了
-                </button>
-              )}
+            <div className={styles.fields}>
+              {FIELD_KEYS.map((key) => {
+                const raw = (person[key] as string | null) ?? null;
+                return (
+                  <Field
+                    key={key}
+                    label={FIELD_LABEL[key] ?? key}
+                    value={raw == null ? null : displayValue(key, raw)}
+                  />
+                );
+              })}
             </div>
-          ))}
-        </div>
-      )}
 
-      <div className={styles.provenance}>
-        <span className={styles.count}>
-          <i className={`${styles.cdot} ${styles.cFact}`} />
-          <b>{person.assertions.length}</b> 条记录
-        </span>
-        <span className={styles.count}>
-          <i className={`${styles.cdot} ${styles.cNote}`} />
-          <b>{person.annotations.length}</b> 条备注
-        </span>
-        <span className={styles.count}>
-          <i className={`${styles.cdot} ${styles.cFlag}`} />
-          <b>{person.flags.length}</b> 处拿不准
-        </span>
-        <span className={styles.synth}>
-          这些都是从 {person.intents_applied_as_of.length} 条记录拼出来的
-        </span>
-      </div>
+            {!past && person.flags.length > 0 && (
+              <div className={styles.flagList}>
+                {person.flags.map((f, i) => (
+                  <div key={f.intent_id ?? i} className={styles.flagItem}>
+                    <span className={styles.flagIcon}>⚠</span>
+                    <span className={styles.flagText}>
+                      <b>{fieldLabel(f.target_field)}</b>
+                      {f.flag_reason ? ` · ${f.flag_reason}` : " 这条小本拿不准"}
+                    </span>
+                    {f.intent_id != null && (
+                      <button
+                        className={styles.flagDismiss}
+                        onClick={() => onResolve(f.intent_id as number, "reject")}
+                      >
+                        知道了
+                      </button>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+
+            <div className={styles.provenance}>
+              <span className={styles.count}>
+                <i className={`${styles.cdot} ${styles.cFact}`} />
+                <b>{person.assertions.length}</b> 条记录
+              </span>
+              <span className={styles.count}>
+                <i className={`${styles.cdot} ${styles.cNote}`} />
+                <b>{person.annotations.length}</b> 条备注
+              </span>
+              <span className={styles.count}>
+                <i className={`${styles.cdot} ${styles.cFlag}`} />
+                <b>{person.flags.length}</b> 处拿不准
+              </span>
+              <span className={styles.synth}>
+                从 {person.intents_applied_as_of.length} 条记录拼出来的
+              </span>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
