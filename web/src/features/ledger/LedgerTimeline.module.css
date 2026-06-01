@@ -5,13 +5,13 @@
   min-height: 0;
 }
 
-/* 筛选条 —— 固定在账本顶部(flex 行, 非 sticky), 实底, 下方列表独立滚动 */
+/* 筛选条 —— 固定在账本顶部(flex 行, 非 sticky), 实底(同记忆栏暖纸)遮住下方滚动列表 */
 .filters {
   flex: none;
   display: flex;
   gap: 7px;
-  padding: 16px var(--pad) 12px;
-  background: var(--surface);
+  padding: 12px var(--pad) 12px;
+  background: var(--bg);
   border-bottom: 1px solid var(--line);
 }
 .chip {

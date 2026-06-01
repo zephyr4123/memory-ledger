@@ -11,7 +11,6 @@ import { PersonCard } from "./features/person/PersonCard";
 import { TimeScrubber } from "./features/timetravel/TimeScrubber";
 import { useCrm } from "./hooks/useCrm";
 import type { PersonInput } from "./lib/types";
-import { Panel } from "./ui/Panel";
 
 /* 两个面板开合图标 —— 与 Claude 顶栏同构: 左收会话列表, 右收记忆栏 */
 function IconPanelLeft() {
@@ -111,7 +110,7 @@ export default function App() {
             </div>
           </aside>
 
-          {/* ── 中: 对话主舞台 ── */}
+          {/* ── 中: 对话主舞台 (开放画布, 不再是卡片) ── */}
           <section className={styles.stage}>
             <ChatPanel
               messages={crm.messages}
@@ -127,13 +126,14 @@ export default function App() {
             />
           </section>
 
-          {/* ── 右: 记忆栏 (可折叠) ── */}
+          {/* ── 右: 记忆栏 (可折叠) —— 一条连续列, 发丝线分段, 无独立卡片 ── */}
           <aside className={styles.memRail} data-open={memOpen}>
             <div className={styles.memInner}>
               <div className={styles.memHead}>
                 <span className="eyebrow">记忆</span>
                 <span className={styles.memHint}>小本为你存留的人与事</span>
               </div>
+
               <div className={styles.strip}>
                 <ContactStrip
                   people={crm.people}
@@ -142,7 +142,8 @@ export default function App() {
                   onAdd={() => setEditor({ mode: "create" })}
                 />
               </div>
-              <Panel flush className={styles.truth}>
+
+              <div className={styles.personSection}>
                 <PersonCard
                   person={crm.person}
                   asOf={crm.asOf}
@@ -156,10 +157,14 @@ export default function App() {
                     <TimeScrubber ledger={crm.ledger} asOf={crm.asOf} onTravel={crm.travelTo} />
                   </div>
                 )}
-              </Panel>
-              <Panel label="变更记录" className={`${styles.fill} ${styles.ledgerPanel}`} bodyFlow>
+              </div>
+
+              <div className={styles.ledgerSection}>
+                <div className={styles.ledgerHead}>
+                  <span className="eyebrow">变更记录</span>
+                </div>
                 <LedgerTimeline events={crm.ledger} />
-              </Panel>
+              </div>
             </div>
           </aside>
         </main>

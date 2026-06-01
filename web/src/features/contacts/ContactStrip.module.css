@@ -7,6 +7,7 @@
   scrollbar-width: thin;
 }
 
+/* 焦点选择 chip —— 扁平不浮 (不再是带阴影的小卡片): 透明底 + 发丝边, 仅选中态染鼠尾草 */
 .chip {
   flex: none;
   display: inline-flex;
@@ -14,17 +15,15 @@
   gap: 9px;
   padding: 6px 14px 6px 6px;
   border-radius: var(--r-pill);
-  border: 1px solid transparent;
-  background: var(--surface-bright);
-  box-shadow: var(--shadow-card);
+  border: 1px solid var(--line);
+  background: transparent;
   transition:
-    transform var(--dur-fast) var(--ease),
     border-color var(--dur-fast) var(--ease),
-    box-shadow var(--dur-fast) var(--ease);
+    background var(--dur-fast) var(--ease);
 }
 .chip:hover {
-  transform: translateY(-1px);
-  box-shadow: var(--shadow-lift);
+  border-color: var(--line-strong);
+  background: var(--surface);
 }
 
 .avatar {

@@ -1,13 +1,11 @@
+/* 开放画布: 对话区不再是浮卡, 直接坐在画布上 —— 唯一浮起的是输入框与确认闸门。 */
 .panel {
   display: flex;
   flex-direction: column;
   flex: 1;
   width: 100%;
   min-height: 0;
-  background: var(--surface);
-  border: 1px solid var(--line);
-  border-radius: var(--r-card);
-  box-shadow: var(--shadow-card);
+  background: transparent;
   overflow: hidden;
 }
 

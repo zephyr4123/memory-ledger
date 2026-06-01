@@ -1,18 +1,20 @@
+/* 连续画布: 整屏一片暖纸, 区与区之间只用发丝线分隔 —— 不再是各自描边的浮卡。
+   唯一浮起的实体是对话输入框与确认闸门; 其余皆"通铺"在同一张纸上, 靠留白与发丝线过渡。 */
 .shell {
   display: flex;
   flex-direction: column;
   height: 100vh;
-  padding: var(--gutter);
-  gap: var(--gutter);
 }
 
-/* ── 安静的日光抬头 ── */
+/* ── 抬头: 通栏, 仅一条发丝线收底, 无卡片 ── */
 .topbar {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 24px;
-  padding: 0 2px;
+  flex: none;
+  padding: 14px 22px;
+  border-bottom: 1px solid var(--line);
 }
 .topLeft {
   display: flex;
@@ -27,7 +29,6 @@
   flex: none;
 }
 
-/* 面板开合按钮: 安静描边方钮, 选中态染上鼠尾草 */
 .railToggle {
   flex: none;
   display: inline-flex;
@@ -40,12 +41,11 @@
   border: 1px solid transparent;
   transition:
     color var(--dur-fast) var(--ease),
-    background var(--dur-fast) var(--ease),
-    border-color var(--dur-fast) var(--ease);
+    background var(--dur-fast) var(--ease);
 }
 .railToggle:hover {
   color: var(--ink);
-  background: var(--surface);
+  background: var(--surface-sunk);
 }
 .railToggleOn {
   color: var(--sage-ink);
@@ -106,16 +106,14 @@
   background: var(--sage);
 }
 
-/* ── 三区主舞台: 对话居中, 两侧可折叠伴随栏 ── */
+/* ── 三区主舞台: 无间隙, 发丝线分隔 ── */
 .main {
   flex: 1;
   min-height: 0;
   display: flex;
-  gap: var(--gap);
 }
 
-/* 折叠栏通用: 用 CSS width 过渡 (媒体查询可覆盖, 不与 framer 内联样式打架);
-   内层固定宽 → 收起动画时内容整体平移而非被挤压。 */
+/* 折叠栏: CSS width 过渡; 收起时 opacity 归零 → 连发丝边一并隐去, 不留 1px 残线。 */
 .navRail,
 .memRail {
   flex: none;
@@ -123,14 +121,15 @@
   overflow: hidden;
   transition:
     width var(--dur) var(--ease),
-    opacity var(--dur) var(--ease),
-    margin var(--dur) var(--ease);
+    opacity var(--dur) var(--ease);
 }
 .navRail {
-  width: 264px;
+  width: 272px;
+  border-right: 1px solid var(--line);
 }
 .memRail {
-  width: 396px;
+  width: 404px;
+  border-left: 1px solid var(--line);
 }
 .navRail[data-open="false"],
 .memRail[data-open="false"] {
@@ -138,43 +137,42 @@
   opacity: 0;
   pointer-events: none;
 }
-.navRail[data-open="false"] {
-  margin-right: calc(var(--gap) * -1);
-}
-.memRail[data-open="false"] {
-  margin-left: calc(var(--gap) * -1);
-}
 
 .navInner {
-  width: 264px;
+  width: 272px;
   height: 100%;
   display: flex;
   flex-direction: column;
   min-height: 0;
+  padding: 18px 14px;
 }
+/* 记忆栏: 横向留白由各分段自管 (人卡/账本各带 var(--pad)), 故 inner 横向不再加 padding,
+   分段的 border-top 发丝线得以通栏铺满 —— 读作连续的缝, 而非内缩的小标尺。 */
 .memInner {
-  width: 396px;
+  width: 404px;
   height: 100%;
   display: flex;
   flex-direction: column;
-  gap: var(--gap);
   min-height: 0;
+  padding: 18px 0 0;
 }
 
-/* ── 中央对话舞台 ── */
+/* ── 中央对话画布: 比两侧暖纸略亮一档的内容台, 无边框无阴影 ── */
 .stage {
   flex: 1 1 0;
   min-width: 0;
   min-height: 0;
   display: flex;
+  background: var(--surface);
 }
 
-/* ── 记忆栏内部 ── */
+/* ── 记忆栏内部分段 ── */
 .memHead {
+  flex: none;
   display: flex;
   align-items: baseline;
   gap: 12px;
-  padding: 0 2px;
+  padding: 0 var(--pad) 14px;
 }
 .memHint {
   font-size: 12px;
@@ -182,21 +180,29 @@
 }
 .strip {
   flex: none;
+  padding: 0 var(--pad) 16px;
 }
 
-/* 人卡 + 时光机同住一张卡; 封顶 46% —— 快照再长也给「变更记录」留出至少一半。 */
-.truth {
+/* 人卡分段: 封顶 46%, 再长也给「变更记录」留出至少一半 (超出则段内滚动)。 */
+.personSection {
   flex: 0 1 auto;
   min-height: 0;
   max-height: 46%;
+  overflow: auto;
+  border-top: 1px solid var(--line);
 }
-.ledgerPanel {
+/* 变更记录分段: 吃掉剩余高度; 自身为 flex 列容器, 内部筛选条固定、列表独立滚动。 */
+.ledgerSection {
   flex: 1 1 0;
   min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border-top: 1px solid var(--line);
 }
-.fill {
-  flex: 1;
-  min-height: 0;
+.ledgerHead {
+  flex: none;
+  padding: 15px var(--pad) 0;
 }
 .scrubber {
   margin: 0 var(--pad) var(--pad);
@@ -204,7 +210,7 @@
   border-top: 1px solid var(--line);
 }
 
-/* 窄屏: 纵向堆叠, 三区(含确认闸门)全部保留可达, 折叠态强制展开。 */
+/* ── 窄屏: 纵向堆叠, 发丝线转为收底; 折叠态强制展开, 三区(含闸门)全部可达 ── */
 @media (max-width: 1180px) {
   .shell {
     height: auto;
@@ -222,8 +228,9 @@
     width: 100%;
     opacity: 1;
     pointer-events: auto;
-    margin: 0;
     overflow: visible;
+    border: none;
+    border-bottom: 1px solid var(--line);
   }
   .navInner,
   .memInner {
@@ -235,10 +242,10 @@
   .stage {
     min-height: 60vh;
   }
-  .truth {
+  .personSection {
     max-height: none;
   }
-  .ledgerPanel {
+  .ledgerSection {
     min-height: 360px;
   }
 }
