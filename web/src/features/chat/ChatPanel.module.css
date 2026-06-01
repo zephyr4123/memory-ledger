@@ -3,40 +3,69 @@
   flex-direction: column;
   height: 100%;
   min-height: 0;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r-card);
+  box-shadow: var(--shadow-card);
+  overflow: hidden;
 }
 
 .header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 14px 16px;
+  gap: 12px;
+  padding: 16px var(--pad);
   border-bottom: 1px solid var(--line);
 }
 .title {
-  display: flex;
-  align-items: center;
-  gap: 9px;
   font-size: 12px;
+  font-weight: 600;
   letter-spacing: 0.16em;
   text-transform: uppercase;
-  color: var(--text-dim);
+  color: var(--ink-dim);
 }
-.dot {
-  width: 8px;
-  height: 8px;
+.conn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  min-width: 0;
+}
+.connLive {
+  color: var(--sage-ink);
+}
+.connDot {
+  flex: none;
+  width: 7px;
+  height: 7px;
   border-radius: 50%;
-  background: var(--text-faint);
+  background: var(--ink-faint);
 }
-.dot[data-live="true"] {
-  background: var(--accent);
-  box-shadow: 0 0 10px var(--accent-glow);
+.connLive .connDot {
+  background: var(--sage);
+}
+.model {
+  font-size: 10.5px;
+  font-weight: 400;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--ink-faint);
+  max-width: 150px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .scroll {
   flex: 1;
   min-height: 0;
   overflow: auto;
-  padding: 18px 16px;
+  padding: var(--pad);
   display: flex;
   flex-direction: column;
   gap: 16px;
@@ -45,26 +74,33 @@
 .placeholder {
   margin: auto 0;
   text-align: center;
-  padding: 10px 6px;
+  padding: 8px 4px;
 }
 .phTitle {
-  font-size: 26px;
-  color: var(--text);
-  margin-bottom: 10px;
+  font-size: 27px;
+  color: var(--ink);
+  margin-bottom: 12px;
 }
 .phBody {
-  font-size: 12px;
+  font-size: 14px;
+  color: var(--ink-dim);
   line-height: 1.7;
-  color: var(--text-faint);
-  max-width: 42ch;
+  max-width: 40ch;
   margin: 0 auto;
+}
+.phNote {
+  font-size: 12.5px;
+  line-height: 1.65;
+  color: var(--ink-faint);
+  max-width: 44ch;
+  margin: 14px auto 0;
 }
 
 .msg {
   display: flex;
   flex-direction: column;
   gap: 5px;
-  max-width: 88%;
+  max-width: 86%;
 }
 .user {
   align-self: flex-end;
@@ -74,28 +110,29 @@
   align-self: flex-start;
 }
 .roleTag {
-  font-size: 9.5px;
-  letter-spacing: 0.18em;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.16em;
   text-transform: uppercase;
-  color: var(--text-faint);
+  color: var(--ink-faint);
   padding: 0 4px;
 }
 .bubble {
-  padding: 10px 13px;
+  padding: 11px 14px;
   border-radius: var(--r-md);
-  font-size: 13px;
+  font-size: 14px;
   line-height: 1.55;
-  border: 1px solid var(--line);
   white-space: pre-wrap;
   word-break: break-word;
 }
 .user .bubble {
-  background: var(--accent-soft);
-  border-color: rgba(87, 231, 201, 0.22);
-  color: var(--text);
+  background: var(--sage-soft);
+  color: var(--ink);
 }
 .agent .bubble {
-  background: var(--surface-2);
+  background: var(--surface-bright);
+  border: 1px solid var(--line);
+  color: var(--ink);
 }
 
 .caret {
@@ -104,7 +141,7 @@
   height: 1.05em;
   margin-left: 2px;
   vertical-align: text-bottom;
-  background: var(--accent);
+  background: var(--sage);
   animation: blink 1s steps(2, start) infinite;
 }
 @keyframes blink {
@@ -117,59 +154,67 @@
   display: flex;
   flex-direction: column;
   gap: 8px;
-  padding: 0 16px;
+  padding: 0 var(--pad);
 }
 .gates:not(:empty) {
   padding-top: 12px;
 }
 
-/* ── 确认闸门 (琥珀, 唯一用到 amber 的地方) ── */
+/* ── 确认闸门 (clay, 全站唯一实心陶土块) ── */
 .gate {
-  border: 1px solid rgba(255, 184, 77, 0.32);
-  background: linear-gradient(180deg, var(--amber-soft), rgba(255, 184, 77, 0.03));
+  border: 1px solid var(--clay-line);
+  border-left: 3px solid var(--clay);
+  background: var(--clay-soft);
   border-radius: var(--r-md);
-  padding: 12px 13px;
-  box-shadow: 0 0 26px -10px var(--amber-glow);
+  padding: 13px 15px;
+  box-shadow: var(--shadow-gate);
 }
 .gateHead {
   display: flex;
   align-items: center;
   gap: 9px;
-  margin-bottom: 9px;
+  margin-bottom: 10px;
 }
 .gateGlyph {
-  color: var(--amber);
+  color: var(--clay-ink);
   font-size: 13px;
 }
-.gateHead .eyebrow {
-  color: var(--amber);
-  opacity: 0.85;
+.gateLabel {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--clay-ink);
 }
 .gateConf {
   margin-left: auto;
-  font-size: 10px;
-  color: var(--amber);
-  opacity: 0.8;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--clay-ink);
 }
 .gateBody {
   display: flex;
   align-items: baseline;
-  gap: 9px;
+  gap: 10px;
   flex-wrap: wrap;
-  margin-bottom: 12px;
+  margin-bottom: 14px;
 }
 .gateField {
-  font-size: 10px;
-  letter-spacing: 0.16em;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: var(--text-dim);
+  color: var(--ink-dim);
 }
 .gateArrow {
-  color: var(--amber);
+  color: var(--clay);
 }
 .gateValue {
-  font-size: 17px;
-  color: var(--text);
+  font-size: 16px;
+  color: var(--ink);
+  min-width: 0;
+  max-width: 100%;
+  overflow-wrap: anywhere;
 }
 .gateActions {
   display: flex;
@@ -178,55 +223,60 @@
 }
 .reject,
 .confirm {
-  padding: 6px 16px;
-  font-size: 12px;
+  padding: 7px 17px;
+  font-size: 13px;
+  font-weight: 500;
   border-radius: var(--r-sm);
-  border: 1px solid var(--line-strong);
+  border: 1px solid transparent;
   transition: all var(--dur-fast) var(--ease);
 }
 .reject {
-  color: var(--text-dim);
+  color: var(--ink-dim);
+  border-color: var(--line-strong);
 }
 .reject:hover {
-  color: var(--red);
-  border-color: var(--red);
+  color: var(--danger-ink);
+  border-color: var(--danger);
 }
 .confirm {
-  color: var(--amber-ink);
-  background: var(--amber);
-  border-color: var(--amber);
-  font-weight: 700;
+  color: var(--surface-bright);
+  background: var(--clay-ink);
+  border-color: var(--clay-ink);
+  font-weight: 600;
 }
 .confirm:hover {
-  box-shadow: 0 0 18px -2px var(--amber-glow);
+  background: var(--clay-deep);
+  border-color: var(--clay-deep);
 }
 
 .composer {
   display: flex;
   gap: 9px;
   align-items: flex-end;
-  padding: 14px 16px;
+  padding: var(--pad);
   border-top: 1px solid var(--line);
 }
 .input {
   flex: 1;
   resize: none;
   max-height: 120px;
-  padding: 10px 12px;
-  background: var(--surface-2);
-  border: 1px solid var(--line);
+  padding: 11px 13px;
+  background: var(--surface-bright);
+  border: 1px solid var(--line-strong);
   border-radius: var(--r-md);
-  font-size: 13px;
+  font-size: 14px;
   line-height: 1.5;
   outline: none;
-  transition: border-color var(--dur-fast) var(--ease);
+  transition:
+    border-color var(--dur-fast) var(--ease),
+    box-shadow var(--dur-fast) var(--ease);
 }
 .input:focus {
-  border-color: var(--accent-dim);
-  box-shadow: 0 0 0 3px var(--accent-soft);
+  border-color: var(--sage-line);
+  box-shadow: 0 0 0 3px var(--sage-soft);
 }
 .input::placeholder {
-  color: var(--text-faint);
+  color: var(--ink-faint);
 }
 .send {
   flex: none;
@@ -234,17 +284,17 @@
   height: 40px;
   display: grid;
   place-items: center;
-  font-size: 16px;
+  font-size: 17px;
   border-radius: var(--r-md);
-  color: var(--accent-ink);
-  background: var(--accent);
+  color: var(--surface-bright);
+  background: var(--sage-ink);
   transition: all var(--dur-fast) var(--ease);
 }
 .send:hover:not(:disabled) {
-  box-shadow: 0 0 18px -2px var(--accent-glow);
+  background: var(--sage-deep);
 }
 .send:disabled {
-  background: var(--surface-3);
-  color: var(--text-faint);
+  background: var(--surface-sunk);
+  color: var(--ink-faint);
   cursor: default;
 }

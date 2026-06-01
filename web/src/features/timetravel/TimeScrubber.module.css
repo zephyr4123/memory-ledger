@@ -1,7 +1,7 @@
 .wrap {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 14px;
 }
 
 .head {
@@ -10,14 +10,16 @@
   justify-content: space-between;
 }
 .readout {
-  font-size: 12px;
-  letter-spacing: 0.04em;
+  font-size: 12.5px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
 }
 .now {
-  color: var(--accent);
+  color: var(--sage-ink);
 }
 .past {
-  color: var(--amber);
+  color: var(--clay-ink);
+  font-style: italic;
 }
 
 .controls {
@@ -28,29 +30,30 @@
 
 .step {
   flex: none;
-  width: 26px;
-  height: 26px;
+  width: 28px;
+  height: 28px;
   display: grid;
   place-items: center;
   font-size: 16px;
-  color: var(--text-dim);
+  color: var(--ink-dim);
   border: 1px solid var(--line);
   border-radius: var(--r-sm);
   transition: all var(--dur-fast) var(--ease);
 }
 .step:hover:not(:disabled) {
-  color: var(--accent);
-  border-color: var(--accent-dim);
+  color: var(--sage-ink);
+  border-color: var(--sage-line);
+  background: var(--sage-soft);
 }
 .step:disabled {
-  opacity: 0.3;
+  opacity: 0.32;
   cursor: default;
 }
 
 .track {
   position: relative;
   flex: 1;
-  height: 34px;
+  height: 30px;
   display: flex;
   align-items: center;
 }
@@ -67,38 +70,41 @@
   position: absolute;
   left: 0;
   height: 2px;
-  background: linear-gradient(90deg, var(--accent-dim), var(--accent));
-  box-shadow: 0 0 10px var(--accent-glow);
+  background: var(--sage);
   border-radius: 2px;
 }
 
 .tick {
   position: absolute;
   top: 50%;
-  width: 9px;
-  height: 9px;
+  width: 10px;
+  height: 10px;
   transform: translate(-50%, -50%);
   border-radius: 50%;
-  background: var(--surface-3);
-  border: 1px solid var(--line-strong);
+  background: var(--surface-bright);
+  border: 1.5px solid var(--line-strong);
   transition:
     background var(--dur-fast) var(--ease),
     border-color var(--dur-fast) var(--ease);
 }
 .tick:hover {
-  border-color: var(--accent);
+  border-color: var(--sage);
 }
 .tickPast {
-  background: var(--accent-dim);
-  border-color: var(--accent);
+  background: var(--sage);
+  border-color: var(--sage);
 }
+
+/* NOW = 鼠尾草小菱形终点 */
 .nowTick {
-  width: 7px;
-  height: 18px;
-  border-radius: 3px;
+  width: 11px;
+  height: 11px;
+  border-radius: 2px;
+  transform: translate(-50%, -50%) rotate(45deg);
 }
 .tickOn {
-  border-color: var(--accent);
+  background: var(--sage);
+  border-color: var(--sage);
 }
 
 .handle {
@@ -108,14 +114,15 @@
   height: 16px;
   transform: translate(-50%, -50%);
   border-radius: 50%;
-  background: var(--accent);
+  background: var(--sage);
+  border: 2px solid var(--surface-bright);
   box-shadow:
-    0 0 0 4px var(--accent-soft),
-    0 0 18px var(--accent-glow);
+    0 0 0 1px var(--line-strong),
+    var(--shadow-card);
   pointer-events: none;
 }
 
 .hint {
-  font-size: 10.5px;
-  color: var(--text-faint);
+  font-size: 12px;
+  color: var(--ink-faint);
 }

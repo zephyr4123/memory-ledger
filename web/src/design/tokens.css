@@ -1,58 +1,70 @@
-/* Chronograph 设计 token —— 全站唯一真源 (颜色/字体/间距/动效)。
-   规则: 电青 = 系统主调与"生效/现在"; 琥珀 = 且仅 = 人工确认闸门; 红 = 拒绝。 */
+/* Atelier 设计 token —— 全站唯一真源 (颜色/字体/间距/动效/阴影)。
+   "雨后日光工作室": 暖纸底 + 漂浮柔影卡。
+   颜色纪律: 鼠尾草绿 = 系统的"活/真相"之声; 陶土橙 = 且仅 = 人工确认闸门;
+   红 = 拒绝。除闸门外, 陶土橙不出现在任何其它地方。
+   文本墨色经过对比度校准, 满足 WCAG 可读性 (深墨/暗墨过 AA, 极淡墨过 UI 阈值)。 */
 :root {
-  /* canvas / surfaces */
-  --bg: #090b0f;
-  --bg-grid: rgba(255, 255, 255, 0.022);
-  --surface-1: #0e1217;
-  --surface-2: #141a22;
-  --surface-3: #1b232d;
+  /* ── canvas / surfaces (暖纸日光) ── */
+  --bg: #f4f1ea;
+  --surface: #fcfbf7;
+  --surface-bright: #ffffff;
+  --surface-sunk: #efeae0;
 
-  /* hairlines */
-  --line: rgba(255, 255, 255, 0.07);
-  --line-strong: rgba(255, 255, 255, 0.14);
+  /* ── ink (墨) —— 已按浅底对比度校准 ── */
+  --ink: #2a2722;
+  --ink-dim: #6a6157; /* 次级文字 / 标签, ~5:1 对比度 */
+  --ink-faint: #857c70; /* 最安静的 meta / 时间戳, ~3.5:1 对比度 */
 
-  /* text */
-  --text: #e7edf4;
-  --text-dim: #9aa6b6;
-  --text-faint: #5c6675;
+  /* ── hairlines ── */
+  --line: rgba(42, 39, 34, 0.08);
+  --line-strong: rgba(42, 39, 34, 0.16);
 
-  /* signature accent — electric teal */
-  --accent: #57e7c9;
-  --accent-dim: #2f8f7e;
-  --accent-ink: #04130f;
-  --accent-glow: rgba(87, 231, 201, 0.45);
-  --accent-soft: rgba(87, 231, 201, 0.1);
+  /* ── sage —— 活/真相之声 (生效、现在、选中、已采纳事实) ── */
+  --sage: #6f8f6a; /* 实心装饰: 圆点 / 刻度 / 进度 / 把手 */
+  --sage-ink: #46643f; /* 落在浅底 / sage-soft 上的可读文字色, ~5:1 */
+  --sage-deep: #3a5436; /* 更深: 按钮 hover */
+  --sage-soft: rgba(111, 143, 106, 0.12);
+  --sage-line: rgba(111, 143, 106, 0.34);
 
-  /* amber — reserved for the confirmation gate */
-  --amber: #ffb84d;
-  --amber-ink: #1a1100;
-  --amber-glow: rgba(255, 184, 77, 0.42);
-  --amber-soft: rgba(255, 184, 77, 0.11);
+  /* ── clay —— 且仅 = 确认闸门 / 待签写 ── */
+  --clay: #c98a3c; /* 暖陶土: 闸门左缘 / 装饰描边 (非文字) */
+  --clay-ink: #8f5512; /* 闸门文字 + 确认按钮底色 (配白字 ~6:1) */
+  --clay-deep: #74480f; /* 确认按钮 hover */
+  --clay-soft: rgba(201, 138, 60, 0.12);
+  --clay-line: rgba(201, 138, 60, 0.42);
+  --clay-tint: rgba(201, 138, 60, 0.05); /* 时光机回到过去时, 人卡的极淡染色 */
 
-  /* status */
-  --red: #f2685c;
-  --red-soft: rgba(242, 104, 92, 0.12);
-  --violet: #9b8cff;
+  /* ── danger —— 拒绝 ── */
+  --danger: #c0584b;
+  --danger-ink: #a8453a;
+  --danger-soft: rgba(192, 88, 75, 0.12);
 
-  /* type */
-  --font-mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
-  --font-display: "Instrument Serif", Georgia, "Times New Roman", serif;
+  /* ── type —— 拉丁字体 + CJK 兜底栈; hero 中文名走 Noto Serif SC 衬线 ── */
+  --font-display: "Fraunces", "Noto Serif SC", "Songti SC", Georgia, serif;
+  --font-body: "Familjen Grotesk", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei",
+    "Noto Sans SC", system-ui, sans-serif;
+  --font-mono: "Spline Sans Mono", "PingFang SC", "Hiragino Sans GB", ui-monospace, "SF Mono",
+    Menlo, monospace;
 
-  /* radius / spacing */
-  --r-sm: 6px;
-  --r-md: 10px;
-  --r-lg: 16px;
+  /* ── radius ── */
+  --r-sm: 8px;
+  --r-md: 12px;
+  --r-card: 18px;
   --r-pill: 999px;
-  --pad: 16px;
 
-  /* motion */
+  /* ── spacing (呼吸为先) ── */
+  --gutter: 28px; /* 页边 / 卡间大间距 */
+  --gap: 22px; /* 卡与卡 */
+  --pad: 24px; /* 卡内 */
+
+  /* ── motion ── */
   --ease: cubic-bezier(0.22, 1, 0.36, 1);
   --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
-  --dur: 0.42s;
-  --dur-fast: 0.2s;
+  --dur: 0.34s;
+  --dur-fast: 0.18s;
 
-  /* depth */
-  --shadow-1: inset 0 1px 0 rgba(255, 255, 255, 0.04), 0 10px 34px rgba(0, 0, 0, 0.5);
-  --shadow-glow: 0 0 0 1px var(--accent-soft), 0 0 30px -8px var(--accent-glow);
+  /* ── depth —— 柔和漫射, 零辉光 ── */
+  --shadow-card: 0 1px 2px rgba(42, 39, 34, 0.04), 0 10px 28px -16px rgba(42, 39, 34, 0.18);
+  --shadow-lift: 0 2px 6px rgba(42, 39, 34, 0.06), 0 22px 48px -20px rgba(42, 39, 34, 0.26);
+  --shadow-gate: 0 2px 8px rgba(116, 72, 15, 0.1), 0 24px 50px -22px rgba(116, 72, 15, 0.36);
 }

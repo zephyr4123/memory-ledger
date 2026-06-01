@@ -7,111 +7,124 @@
 .row {
   position: relative;
   display: grid;
-  grid-template-columns: 18px 1fr;
-  gap: 12px;
-  padding: 12px 0;
+  grid-template-columns: 16px 1fr;
+  gap: 14px;
+  padding: 16px 0;
 }
-/* 连接线 */
+/* 一条贯穿的细线索 (手稿连缀感), 非每行画框 */
 .row::before {
   content: "";
   position: absolute;
-  left: 8px;
+  left: 7px;
   top: 0;
   bottom: 0;
   width: 1px;
   background: var(--line);
 }
 .row:first-child::before {
-  top: 18px;
+  top: 22px;
 }
 .row:last-child::before {
-  bottom: calc(100% - 18px);
+  bottom: calc(100% - 22px);
 }
 
 .node {
   position: relative;
   z-index: 1;
-  width: 10px;
-  height: 10px;
-  margin-top: 5px;
+  width: 11px;
+  height: 11px;
+  margin-top: 6px;
   border-radius: 50%;
-  background: var(--surface-3);
-  border: 2px solid var(--text-faint);
+  background: var(--surface-bright);
+  border: 2px solid var(--ink-faint);
 }
-.k_PATCH {
-  border-color: var(--violet);
+.s_APPLIED {
+  background: var(--sage);
+  border-color: var(--sage);
 }
-.k_ASSERT {
-  border-color: var(--accent);
+.s_PROPOSED {
+  background: var(--surface-bright);
+  border-color: var(--clay);
 }
-.k_ANNOTATE {
-  border-color: var(--text-dim);
+.s_SUPERSEDED,
+.s_EXPIRED {
+  background: var(--surface-sunk);
+  border-color: var(--line-strong);
 }
-.k_FLAG {
-  border-color: var(--amber);
+.s_REJECTED {
+  background: var(--surface-bright);
+  border-color: var(--danger);
 }
 
 .content {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 8px;
   min-width: 0;
 }
 .dead {
-  opacity: 0.55;
+  opacity: 0.6;
 }
 
 .line1 {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 9px;
   flex-wrap: wrap;
 }
+.kind {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  color: var(--ink-dim);
+}
 .layer {
-  font-size: 9.5px;
-  letter-spacing: 0.1em;
-  color: var(--text-faint);
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.04em;
+  color: var(--ink-faint);
 }
 .time {
   margin-left: auto;
-  font-size: 10.5px;
-  color: var(--text-faint);
+  font-size: 11.5px;
+  color: var(--ink-faint);
+}
+
+/* 逐字溯源 —— 一条 entry 里着墨最多的部分 */
+.quote {
+  font-size: 13px;
+  font-style: italic;
+  color: var(--ink);
+  padding: 2px 0 2px 12px;
+  border-left: 2px solid var(--sage-line);
+  overflow-wrap: anywhere;
 }
 
 .summary {
-  font-size: 13.5px;
-  color: var(--text);
+  font-size: 13px;
+  color: var(--ink-dim);
   word-break: break-word;
 }
 .strike {
   text-decoration: line-through;
-  text-decoration-color: var(--text-faint);
-  color: var(--text-dim);
-}
-
-.quote {
-  font-size: 12px;
-  color: var(--accent);
-  padding: 4px 0 4px 11px;
-  border-left: 2px solid var(--accent-dim);
-  font-style: italic;
+  text-decoration-color: var(--ink-faint);
 }
 
 .meta {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 14px;
   flex-wrap: wrap;
-  font-size: 10.5px;
-  color: var(--text-faint);
+  font-size: 11px;
+  color: var(--ink-faint);
 }
 .id {
   margin-left: auto;
-  opacity: 0.7;
 }
 
 .empty {
-  padding: 18px 0;
-  color: var(--text-faint);
-  font-size: 12px;
+  padding: 24px 0;
+  color: var(--ink-faint);
+  font-size: 14px;
 }

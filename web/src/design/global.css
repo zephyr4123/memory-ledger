@@ -15,63 +15,50 @@ body,
 }
 
 body {
-  font-family: var(--font-mono);
-  font-size: 13.5px;
-  line-height: 1.5;
-  color: var(--text);
+  font-family: var(--font-body);
+  font-size: 15px;
+  line-height: 1.6;
+  color: var(--ink);
   background-color: var(--bg);
-  /* 顶部青光晕 + 底部余晖 + 双向细线网格 = 仪表台底色 */
+  /* 雨后日光: 顶部一抹白色天光 + 底部极淡鼠尾草余晖, 无网格、无颗粒、无辉光 */
   background-image:
-    radial-gradient(1200px 620px at 80% -10%, rgba(87, 231, 201, 0.07), transparent 62%),
-    radial-gradient(900px 520px at 6% 112%, rgba(87, 231, 201, 0.035), transparent 60%),
-    linear-gradient(var(--bg-grid) 1px, transparent 1px),
-    linear-gradient(90deg, var(--bg-grid) 1px, transparent 1px);
-  background-size: 100% 100%, 100% 100%, 44px 44px, 44px 44px;
+    radial-gradient(1100px 680px at 72% -16%, rgba(255, 255, 255, 0.7), transparent 60%),
+    radial-gradient(900px 520px at 8% 116%, rgba(111, 143, 106, 0.05), transparent 60%);
   background-attachment: fixed;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
+  font-feature-settings: "ss01" on; /* Familjen Grotesk 的单层 a, 更柔和 */
   overflow: hidden;
-}
-
-/* 极淡颗粒, 给暗面一点胶片质感 */
-body::before {
-  content: "";
-  position: fixed;
-  inset: 0;
-  z-index: 0;
-  pointer-events: none;
-  opacity: 0.035;
-  mix-blend-mode: overlay;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
 }
 
 #root {
   position: relative;
   z-index: 1;
+  height: 100%;
 }
 
 ::selection {
-  background: var(--accent-soft);
-  color: var(--accent);
+  background: var(--sage-soft);
+  color: var(--sage-deep);
 }
 
-/* 细滚动条 */
+/* 细滚动条 (日光版, 极淡) */
 * {
   scrollbar-width: thin;
   scrollbar-color: var(--line-strong) transparent;
 }
 *::-webkit-scrollbar {
-  width: 9px;
-  height: 9px;
+  width: 10px;
+  height: 10px;
 }
 *::-webkit-scrollbar-thumb {
   background: var(--line-strong);
   border-radius: var(--r-pill);
-  border: 2px solid transparent;
+  border: 3px solid transparent;
   background-clip: padding-box;
 }
 *::-webkit-scrollbar-thumb:hover {
-  background: var(--text-faint);
+  background: var(--ink-faint);
   background-clip: padding-box;
 }
 
@@ -89,22 +76,38 @@ textarea {
 }
 
 a {
-  color: var(--accent);
+  color: var(--sage-ink);
   text-decoration: none;
 }
 
-.display {
-  font-family: var(--font-display);
-  font-weight: 400;
-  letter-spacing: 0.01em;
+/* 键盘可达性: 仅键盘聚焦时显式焦点环 (鼠标点击不弹), 满足无障碍导航 */
+:focus-visible {
+  outline: 2px solid var(--sage);
+  outline-offset: 2px;
+  border-radius: 5px;
 }
 
-/* 微标签: 大写、字距、暗色 —— 仪表台标注感 */
+/* Fraunces (拉丁) / Noto Serif SC (中文) —— 只在 hero 名字 / 招牌处 */
+.display {
+  font-family: var(--font-display);
+  font-optical-sizing: auto;
+  font-weight: 460;
+  letter-spacing: -0.01em;
+}
+
+/* 数据原子 (账本里的 field→value / 引用 / 置信度 / 时间戳) */
+.mono {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+/* 区段抬头: 小标签, 字距, 暗墨 —— 安静的标注, 一区一个 */
 .eyebrow {
-  font-size: 10px;
-  letter-spacing: 0.22em;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: var(--text-faint);
+  color: var(--ink-dim);
 }
 
 @media (prefers-reduced-motion: reduce) {

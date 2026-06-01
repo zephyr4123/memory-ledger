@@ -1,41 +1,40 @@
 import { fmtDateTime, valueToText } from "../../lib/format";
-import type { Kind, LedgerEvent, Status } from "../../lib/types";
+import { displayValue, fieldLabel, KIND_LABEL, layerLabel, STATUS_LABEL } from "../../lib/labels";
+import type { LedgerEvent, Status } from "../../lib/types";
 import { Badge, type Tone } from "../../ui/Badge";
 import styles from "./LedgerTimeline.module.css";
 
-const KIND_TONE: Record<Kind, Tone> = {
-  PATCH: "violet",
-  ASSERT: "accent",
-  ANNOTATE: "dim",
-  FLAG: "amber",
-};
-
+/* 颜色只编码"活性"(status): 活=sage, 待签=clay, 死(取代/拒绝/过期)=dim/danger。
+   kind 退为中性标签, 由文字区分 —— 避免重新堆出一片彩虹。 */
 const STATUS_TONE: Record<Status, Tone> = {
-  APPLIED: "accent",
-  PROPOSED: "amber",
+  APPLIED: "sage",
+  PROPOSED: "clay",
   SUPERSEDED: "dim",
-  REJECTED: "red",
+  REJECTED: "danger",
   EXPIRED: "dim",
 };
 
 function summarize(e: LedgerEvent): string {
   const p = e.patch_json ?? {};
-  if (e.kind === "PATCH") return `${e.target_field} → ${valueToText(p[e.target_field ?? ""])}`;
+  if (e.kind === "PATCH") {
+    const f = e.target_field;
+    return `${fieldLabel(f)} → ${displayValue(f, valueToText(p[f ?? ""]))}`;
+  }
   if (e.kind === "ASSERT") {
     return (
       Object.entries(p)
-        .map(([k, v]) => `${k}: ${valueToText(v)}`)
+        .map(([k, v]) => `${fieldLabel(k)}: ${displayValue(k, valueToText(v))}`)
         .join("   ·   ") || "—"
     );
   }
   if (e.kind === "ANNOTATE") return valueToText(p.annotation);
-  return `${e.target_field} · ${valueToText(p.flag_reason)}`; // FLAG
+  return `${fieldLabel(e.target_field)} · ${valueToText(p.flag_reason)}`; // FLAG
 }
 
 export function LedgerTimeline({ events }: { events: LedgerEvent[] }) {
   const ordered = [...events].reverse(); // 最新在上
   if (!ordered.length) {
-    return <div className={styles.empty}>no ledger entries yet</div>;
+    return <div className={styles.empty}>账本还是空的 —— 和智能体聊聊它就有了。</div>;
   }
   return (
     <ol className={styles.timeline}>
@@ -44,31 +43,31 @@ export function LedgerTimeline({ events }: { events: LedgerEvent[] }) {
           e.status === "SUPERSEDED" || e.status === "REJECTED" || e.status === "EXPIRED";
         return (
           <li key={e.id} className={`${styles.row} ${dead ? styles.dead : ""}`}>
-            <span className={`${styles.node} ${styles[`k_${e.kind}`]}`} />
+            <span className={`${styles.node} ${styles[`s_${e.status}`]}`} />
             <div className={styles.content}>
               <div className={styles.line1}>
-                <Badge tone={KIND_TONE[e.kind]}>{e.kind}</Badge>
+                <span className={styles.kind}>{KIND_LABEL[e.kind]}</span>
                 <Badge tone={STATUS_TONE[e.status]} outline>
-                  {e.status}
+                  {STATUS_LABEL[e.status]}
                 </Badge>
-                <span className={styles.layer} title="source layer">
-                  {e.source_layer}
+                <span className={styles.layer} title="来源层">
+                  {layerLabel(e.source_layer)}
                 </span>
                 <span className={styles.time}>{fmtDateTime(e.applied_at ?? e.created_at)}</span>
               </div>
 
-              <div className={`${styles.summary} ${dead ? styles.strike : ""}`}>
+              {e.source_quote && (
+                <blockquote className={`mono ${styles.quote}`}>“{e.source_quote}”</blockquote>
+              )}
+
+              <div className={`mono ${styles.summary} ${dead ? styles.strike : ""}`}>
                 {summarize(e)}
               </div>
 
-              {e.source_quote && (
-                <blockquote className={styles.quote}>“{e.source_quote}”</blockquote>
-              )}
-
-              <div className={styles.meta}>
-                <span>conf {Math.round(e.confidence * 100)}%</span>
-                {e.superseded_by && <span>↳ superseded by #{e.superseded_by}</span>}
-                {e.rejected_reason && <span>rejected · {e.rejected_reason}</span>}
+              <div className={`mono ${styles.meta}`}>
+                <span>置信度 {Math.round(e.confidence * 100)}%</span>
+                {e.superseded_by && <span>↳ 被 #{e.superseded_by} 取代</span>}
+                {e.rejected_reason && <span>已驳回 · {e.rejected_reason}</span>}
                 <span className={styles.id}>#{e.id}</span>
               </div>
             </div>

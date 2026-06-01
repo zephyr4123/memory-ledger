@@ -37,7 +37,7 @@ export function ContactList({ people, selectedId, onSelect }: Props) {
           </button>
         );
       })}
-      {people.length === 0 && <div className={styles.empty}>no contacts</div>}
+      {people.length === 0 && <div className={styles.empty}>暂无联系人</div>}
     </nav>
   );
 }

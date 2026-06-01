@@ -3,8 +3,8 @@ import { type FormEvent, type KeyboardEvent, useEffect, useRef, useState } from 
 
 import type { ChatMessage } from "../../hooks/useCrm";
 import { valueToText } from "../../lib/format";
+import { displayValue, fieldLabel } from "../../lib/labels";
 import type { Banner } from "../../lib/types";
-import { Badge } from "../../ui/Badge";
 import styles from "./ChatPanel.module.css";
 
 interface Props {
@@ -18,6 +18,7 @@ interface Props {
   onResolve: (intentId: number, action: "confirm" | "reject") => void;
 }
 
+/* 确认闸门 —— 全站唯一的"实心陶土块": 高危改动落盘前, 等你签字。 */
 function GateBanner({ banner, onResolve }: { banner: Banner; onResolve: Props["onResolve"] }) {
   return (
     <motion.div
@@ -25,24 +26,26 @@ function GateBanner({ banner, onResolve }: { banner: Banner; onResolve: Props["o
       initial={{ opacity: 0, y: 12, scale: 0.98 }}
       animate={{ opacity: 1, y: 0, scale: 1 }}
       exit={{ opacity: 0, y: -8, scale: 0.98 }}
-      transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+      transition={{ duration: 0.34, ease: [0.16, 1, 0.3, 1] }}
     >
       <div className={styles.gateHead}>
-        <span className={styles.gateGlyph}>⟳</span>
-        <span className="eyebrow">confirm before write</span>
+        <span className={styles.gateGlyph}>✎</span>
+        <span className={styles.gateLabel}>落盘前请确认</span>
         <span className={styles.gateConf}>{Math.round(banner.confidence * 100)}%</span>
       </div>
       <div className={styles.gateBody}>
-        <span className={styles.gateField}>{banner.target_field}</span>
+        <span className={styles.gateField}>{fieldLabel(banner.target_field)}</span>
         <span className={styles.gateArrow}>→</span>
-        <span className={styles.gateValue}>{valueToText(banner.proposed_value)}</span>
+        <span className={`mono ${styles.gateValue}`}>
+          {displayValue(banner.target_field, valueToText(banner.proposed_value))}
+        </span>
       </div>
       <div className={styles.gateActions}>
         <button className={styles.reject} onClick={() => onResolve(banner.intent_id, "reject")}>
-          Reject
+          驳回
         </button>
         <button className={styles.confirm} onClick={() => onResolve(banner.intent_id, "confirm")}>
-          Confirm
+          确认
         </button>
       </div>
     </motion.div>
@@ -61,6 +64,7 @@ export function ChatPanel({
 }: Props) {
   const [draft, setDraft] = useState("");
   const scrollRef = useRef<HTMLDivElement>(null);
+  const live = llm === "live";
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
@@ -86,30 +90,30 @@ export function ChatPanel({
   return (
     <div className={styles.panel}>
       <header className={styles.header}>
-        <div className={styles.title}>
-          <span className={styles.dot} data-live={llm === "live"} />
-          <span>agent</span>
-        </div>
-        <Badge tone={llm === "live" ? "accent" : "dim"} outline>
-          {llm === "live" ? `live · ${model ?? ""}` : "mock — set ANTHROPIC_API_KEY"}
-        </Badge>
+        <span className={styles.title}>智能体</span>
+        <span className={`${styles.conn} ${live ? styles.connLive : ""}`}>
+          <i className={styles.connDot} />
+          <span>{live ? "在线" : "离线"}</span>
+          <span className={`mono ${styles.model}`}>{live ? model : "未配置 LLM_API_KEY"}</span>
+        </span>
       </header>
 
       <div className={styles.scroll} ref={scrollRef}>
         {messages.length === 0 && (
           <div className={styles.placeholder}>
-            <p className={`display ${styles.phTitle}`}>Tell the agent something.</p>
+            <p className={`display ${styles.phTitle}`}>跟智能体说点什么。</p>
             <p className={styles.phBody}>
-              “she moved to Stripe” · “her title is now Director” · “she prefers texts”.
-              <br />
-              The agent replies and proposes structured changes — high-risk edits wait for your
-              confirmation before they touch the record.
+              “她升任产品总监了” · “她搬去了深圳” · “以后短信联系她就行”。
+            </p>
+            <p className={styles.phNote}>
+              智能体会即时回复你，并把其中的变动整理成结构化记录 ——
+              高危改动会先停在确认闸门，等你点头才真正落盘。
             </p>
           </div>
         )}
         {messages.map((m) => (
           <div key={m.id} className={`${styles.msg} ${styles[m.role]}`}>
-            <span className={styles.roleTag}>{m.role === "user" ? "you" : "agent"}</span>
+            <span className={styles.roleTag}>{m.role === "user" ? "你" : "智能体"}</span>
             <div className={styles.bubble}>
               {m.text}
               {m.streaming && <span className={styles.caret} />}
@@ -130,7 +134,7 @@ export function ChatPanel({
         <textarea
           className={styles.input}
           rows={1}
-          placeholder={hasContact ? "message the agent…" : "select a contact first"}
+          placeholder={hasContact ? "和智能体说点什么…" : "请先选择一位联系人"}
           value={draft}
           disabled={!hasContact || streaming}
           onChange={(e) => setDraft(e.target.value)}
@@ -140,9 +144,9 @@ export function ChatPanel({
           className={styles.send}
           type="submit"
           disabled={!draft.trim() || streaming || !hasContact}
-          aria-label="send"
+          aria-label="发送"
         >
-          {streaming ? "…" : "↵"}
+          {streaming ? "…" : "↑"}
         </button>
       </form>
     </div>

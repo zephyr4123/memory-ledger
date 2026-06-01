@@ -2,56 +2,69 @@
   display: flex;
   flex-direction: column;
   height: 100vh;
-  padding: 14px;
-  gap: 14px;
+  padding: var(--gutter);
+  gap: var(--gutter);
 }
 
+/* ── 安静的日光抬头 ── */
 .topbar {
   display: flex;
-  align-items: center;
+  align-items: baseline;
   justify-content: space-between;
-  gap: 20px;
-  padding: 2px 8px;
+  gap: 24px;
+  padding: 0 4px;
 }
 .brand {
   display: flex;
-  align-items: center;
-  gap: 10px;
-}
-.mark {
-  font-size: 20px;
-  color: var(--accent);
-  text-shadow: 0 0 14px var(--accent-glow);
+  align-items: baseline;
+  gap: 16px;
+  flex-wrap: wrap;
 }
 .wordmark {
-  font-size: 16px;
-  letter-spacing: 0.02em;
-  color: var(--text);
+  font-size: 19px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--ink);
 }
-.thin {
-  color: var(--accent);
-}
-.tag {
-  font-size: 9.5px;
-  letter-spacing: 0.24em;
-  text-transform: uppercase;
-  color: var(--text-faint);
-  padding: 3px 9px;
-  border: 1px solid var(--line);
-  border-radius: var(--r-pill);
+.glyph {
+  color: var(--sage);
+  padding: 0 1px;
 }
 .tagline {
-  font-size: 11px;
-  color: var(--text-faint);
-  letter-spacing: 0.02em;
+  font-size: 13.5px;
+  color: var(--ink-dim);
 }
 
+.status {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+.statusLive {
+  color: var(--sage-ink);
+}
+.statusDot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--ink-faint);
+}
+.statusLive .statusDot {
+  background: var(--sage);
+}
+
+/* ── 三区工作室: 漂浮卡 + 大间距, 无硬列边 ── */
 .grid {
   flex: 1;
   min-height: 0;
   display: grid;
-  grid-template-columns: 248px minmax(0, 1fr) 424px;
-  gap: 14px;
+  grid-template-columns: 264px minmax(0, 1fr) 408px;
+  gap: var(--gap);
 }
 
 .col {
@@ -63,7 +76,7 @@
 .colCenter {
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: var(--gap);
   min-width: 0;
   min-height: 0;
 }
@@ -72,25 +85,35 @@
   min-height: 0;
 }
 
+/* 人卡 + 时光机 同住一张卡 (时光机被人卡"拥有") */
+.truth {
+  flex: none;
+}
 .scrubber {
-  margin-top: 20px;
-  padding-top: 18px;
+  margin: 0 var(--pad) var(--pad);
+  padding-top: 20px;
   border-top: 1px solid var(--line);
 }
 
 .chatCol {
-  background: var(--surface-1);
-  border: 1px solid var(--line);
-  border-radius: var(--r-lg);
-  box-shadow: var(--shadow-1);
   overflow: hidden;
 }
 
-@media (max-width: 1080px) {
+/* 窄屏: 单列可滚动, 三区(含聊天 + 闸门)全部保留可达 —— 不再隐藏聊天列,
+   否则确认闸门会在平板/手机上消失、写入流程被切断。 */
+@media (max-width: 1120px) {
+  .shell {
+    height: auto;
+    min-height: 100vh;
+    overflow: auto;
+  }
   .grid {
-    grid-template-columns: 220px minmax(0, 1fr);
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .fill {
+    min-height: 280px;
   }
   .chatCol {
-    display: none;
+    min-height: 560px;
   }
 }
