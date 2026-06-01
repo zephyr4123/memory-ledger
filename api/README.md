@@ -2,7 +2,7 @@
 
 把 memory-ledger 的账本能力 + 一个**真 LLM extractor** 编排成对话式 HTTP API。
 它是库的一个**驱动适配器**(与 CLI 平级):库核心保持 LLM 无关、零依赖;真 LLM
-(Claude)只是库 `Extractor` 端口的具体实现,住在 `crm_api.extraction`。
+(经 **LiteLLM** 接任意 provider)只是库 `Extractor` 端口的具体实现,住在 `crm_api.extraction`。
 
 ## 一轮对话怎么走
 
@@ -31,11 +31,14 @@ POST /api/turns  (SSE)
 
 ## 环境变量
 
+LLM 经 **LiteLLM** 统一接入,换模型只改 env、代码零改动(DeepSeek / OpenAI / 任意 OpenAI 兼容端点 / Anthropic 皆可)。
+
 | 变量 | 默认 | 说明 |
 |---|---|---|
-| `DATABASE_URL` | `postgresql://memory_ledger:memory_ledger@localhost:5432/memory_ledger` | Postgres DSN |
-| `ANTHROPIC_API_KEY` | (空) | **配了才是真 LLM (live)**;没配则离线降级 (mock, 不写记忆) |
-| `MEMORY_LEDGER_MODEL` | `claude-sonnet-4-6` | 对话模型 |
+| `DATABASE_URL` | `postgresql://…@localhost:5432/memory_ledger` | Postgres DSN |
+| `LLM_API_KEY` | (空) | **配了才是真 LLM (live)**;没配则离线降级 (mock, 不写记忆) |
+| `LLM_MODEL` | `deepseek/deepseek-v4-pro` | LiteLLM 路由串(如 `openai/gpt-4o-mini`、`anthropic/claude-sonnet-4-6`) |
+| `LLM_BASE_URL` | (空) | 自定义 Base URL(接 OpenAI 兼容自建/第三方端点时填) |
 | `CRM_USER_ID` | `u1` | 多租户 owner id |
 | `CORS_ORIGINS` | `localhost:5173,4173,80` | 允许的前端来源(逗号分隔) |
 
@@ -44,7 +47,8 @@ POST /api/turns  (SSE)
 ```bash
 pip install -e './api[dev]'                 # memory-ledger 需已在同环境
 export DATABASE_URL=postgresql://localhost/mydb
-export ANTHROPIC_API_KEY=sk-ant-...         # 不配则 mock 模式
+export LLM_API_KEY=...                       # 不配则 mock 模式
+export LLM_MODEL=deepseek/deepseek-v4-pro    # 任意 LiteLLM 支持的模型
 uvicorn crm_api.main:app --reload
 
 pytest api/tests/                            # testcontainers + FakeExtractor, 不打真网络

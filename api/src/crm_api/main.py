@@ -10,7 +10,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from .config import Settings
 from .db import ensure_schema, make_pool
-from .extraction import make_extractor
+from .responder import make_responder
 from .routes import chat, health, intents, people
 from .seed import seed_demo
 
@@ -25,7 +25,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         ensure_schema(conn)
         seed_demo(conn, settings.user_id)
     app.state.pool = pool
-    app.state.extractor = make_extractor(settings)
+    app.state.responder = make_responder(settings)
     try:
         yield
     finally:

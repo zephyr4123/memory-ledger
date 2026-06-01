@@ -20,8 +20,8 @@ from fastapi.responses import StreamingResponse
 
 from ..config import Settings
 from ..db import ledger_for
-from ..deps import get_extractor, get_settings
-from ..extraction import TurnExtractor
+from ..deps import get_responder, get_settings
+from ..responder import TurnResponder
 from ..schemas import BannerOut, LedgerEventOut, PersonOut, TurnRequest
 from ..snapshot import build_person_snapshot
 
@@ -38,7 +38,7 @@ def run_turn(
     body: TurnRequest,
     request: Request,
     settings: Settings = Depends(get_settings),
-    extractor: TurnExtractor = Depends(get_extractor),
+    responder: TurnResponder = Depends(get_responder),
 ) -> StreamingResponse:
     pool = request.app.state.pool
     user_id = settings.user_id
@@ -51,7 +51,7 @@ def run_turn(
 
         # 2. 流式 LLM
         intents: list[Any] = []
-        for kind, payload in extractor.stream_turn(
+        for kind, payload in responder.stream_turn(
             utterance=body.utterance, snapshot=snapshot, person_id=person_id
         ):
             if kind == "delta":

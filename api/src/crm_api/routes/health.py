@@ -16,5 +16,5 @@ def health(settings: Settings = Depends(get_settings)) -> HealthOut:
     return HealthOut(
         status="ok",
         llm="live" if settings.llm_enabled else "mock",
-        model=settings.model if settings.llm_enabled else None,
+        model=settings.llm_model if settings.llm_enabled else None,
     )

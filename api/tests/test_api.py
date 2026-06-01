@@ -1,4 +1,4 @@
-"""集成: crm_api 路由闭环 (testcontainers PG + FakeExtractor, 不打真网络)。
+"""集成: crm_api 路由闭环 (testcontainers PG + FakeResponder, 不打真网络)。
 
 覆盖: health(mock) / 联系人列表 / seed 后真相 / 账本流水(含 supersede+reject) /
 对话一轮(SSE)→ banner / confirm → 真相变 / as-of 时光机。
@@ -13,22 +13,22 @@ from typing import Any
 import psycopg
 import pytest
 from fastapi.testclient import TestClient
-from memory_ledger import Extraction, ProposedIntent
+from memory_ledger import ProposedIntent, Response
 from testcontainers.postgres import PostgresContainer
 
 from crm_api.config import Settings
 from crm_api.db import ensure_schema
-from crm_api.deps import get_extractor
+from crm_api.deps import get_responder
 from crm_api.main import create_app
 
 
-class FakeExtractor:
-    """确定性 extractor: 回一句话 + 提一条 PATCH employer→Stripe。"""
+class FakeResponder:
+    """确定性 responder: 回一句话 + 提一条 PATCH employer→Stripe。"""
 
     reply = "Sure — I'll propose updating her employer to Stripe for your confirmation."
 
-    def extract(self, *, utterance: str, snapshot: str, turn: int) -> Extraction:
-        return Extraction(self.reply, (self._patch(utterance, 1),))
+    def respond(self, *, utterance: str, snapshot: str, turn: int) -> Response:
+        return Response(self.reply, (self._patch(utterance, 1),))
 
     def stream_turn(
         self, *, utterance: str, snapshot: str, person_id: int
@@ -60,11 +60,11 @@ def client(pg_url: str) -> Iterator[TestClient]:
             cur.execute("TRUNCATE l15_change_intents, person, todo_item, project "
                         "RESTART IDENTITY CASCADE")
     settings = Settings(
-        database_url=pg_url, anthropic_api_key=None, model="fake",
+        database_url=pg_url, llm_model="fake", llm_api_key=None, llm_base_url=None,
         user_id="u1", cors_origins=(),
     )
     app = create_app(settings)
-    app.dependency_overrides[get_extractor] = FakeExtractor
+    app.dependency_overrides[get_responder] = FakeResponder
     with TestClient(app) as c:
         yield c
 

@@ -19,7 +19,7 @@ ENV PATH="/opt/venv/bin:$PATH"
 # 1) 第三方运行时依赖 (缓存层, 与源码解耦)
 RUN --mount=type=cache,target=/root/.cache/pip \
     pip install \
-        "fastapi>=0.115" "uvicorn[standard]>=0.30" "anthropic>=0.40" \
+        "fastapi>=0.115" "uvicorn[standard]>=0.30" "litellm>=1.50" \
         "psycopg[binary]>=3.1" "psycopg-pool>=3.2"
 
 # 2) 安装 memory-ledger 库 (本地 monorepo, 只 COPY 构建必需文件)

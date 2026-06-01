@@ -13,7 +13,7 @@ dependencies = [
     "memory-ledger",
     "fastapi>=0.115",
     "uvicorn[standard]>=0.30",
-    "anthropic>=0.40",
+    "litellm>=1.50", # 统一 LLM 接入: 一套代码接任意 provider (DeepSeek/OpenAI/...)
     "psycopg[binary]>=3.1",
     "psycopg-pool>=3.2",
 ]

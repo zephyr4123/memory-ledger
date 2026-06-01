@@ -1,8 +1,9 @@
 """系统提示词 + 工具定义 + 工具产物 → ProposedIntent 的映射.
 
 集成契约: 一次 LLM 调用同时产出 (a) 面向用户的自然回复(text) 和 (b) 通过工具
-`record_memory_intents` 吐出的结构化 4-kind intent。用 tool_choice=auto(不强制),
-让模型既能正常对话、又能在事实变动时落 intent。
+`record_memory_intents` 吐出的结构化 4-kind intent。工具用 OpenAI function-calling
+格式 (LiteLLM 对所有 provider 统一成这一种), tool_choice=auto 让模型既能正常对话、
+又能在事实变动时落 intent。
 """
 
 from __future__ import annotations
@@ -14,67 +15,71 @@ from memory_ledger import ProposedIntent
 
 TOOL_NAME = "record_memory_intents"
 
+# OpenAI function-calling schema (LiteLLM 跨 provider 统一格式)。
 TOOL: dict[str, Any] = {
-    "name": TOOL_NAME,
-    "description": (
-        "Record structured memory intents extracted from the user's message about a "
-        "contact. Call this WHENEVER the user states, changes, annotates, or casts doubt "
-        "on a fact about the person in focus. Emit one item per discrete fact."
-    ),
-    "input_schema": {
-        "type": "object",
-        "properties": {
-            "intents": {
-                "type": "array",
-                "items": {
-                    "type": "object",
-                    "properties": {
-                        "kind": {
-                            "type": "string",
-                            "enum": ["PATCH", "ASSERT", "ANNOTATE", "FLAG"],
-                            "description": (
-                                "PATCH=change an existing structured field (high-risk, "
-                                "user must confirm). ASSERT=state new facts. "
-                                "ANNOTATE=free-text note. FLAG=mark a field uncertain."
-                            ),
+    "type": "function",
+    "function": {
+        "name": TOOL_NAME,
+        "description": (
+            "Record structured memory intents extracted from the user's message about a "
+            "contact. Call this WHENEVER the user states, changes, annotates, or casts "
+            "doubt on a fact about the person in focus. Emit one item per discrete fact."
+        ),
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "intents": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "kind": {
+                                "type": "string",
+                                "enum": ["PATCH", "ASSERT", "ANNOTATE", "FLAG"],
+                                "description": (
+                                    "PATCH=change an existing structured field (high-risk, "
+                                    "user must confirm). ASSERT=state new facts. "
+                                    "ANNOTATE=free-text note. FLAG=mark a field uncertain."
+                                ),
+                            },
+                            "target_field": {
+                                "type": "string",
+                                "description": (
+                                    "For PATCH/FLAG: one of "
+                                    "employer|role|location|comm_pref|full_name|relationship."
+                                ),
+                            },
+                            "value": {
+                                "type": "string",
+                                "description": "For PATCH: the new value of target_field.",
+                            },
+                            "assertion": {
+                                "type": "object",
+                                "description": "For ASSERT: a {field: value} object of facts.",
+                            },
+                            "annotation": {
+                                "type": "string",
+                                "description": "For ANNOTATE: the free-text note.",
+                            },
+                            "flag_reason": {
+                                "type": "string",
+                                "description": "For FLAG: why this field is uncertain.",
+                            },
+                            "source_quote": {
+                                "type": "string",
+                                "description": "The user's EXACT words that justify this intent.",
+                            },
+                            "confidence": {
+                                "type": "number",
+                                "description": "0.0-1.0 confidence in this extraction.",
+                            },
                         },
-                        "target_field": {
-                            "type": "string",
-                            "description": (
-                                "For PATCH/FLAG: the field, one of "
-                                "employer|role|location|comm_pref|full_name|relationship."
-                            ),
-                        },
-                        "value": {
-                            "type": "string",
-                            "description": "For PATCH: the new value of target_field.",
-                        },
-                        "assertion": {
-                            "type": "object",
-                            "description": "For ASSERT: a {field: value} object of new facts.",
-                        },
-                        "annotation": {
-                            "type": "string",
-                            "description": "For ANNOTATE: the free-text note.",
-                        },
-                        "flag_reason": {
-                            "type": "string",
-                            "description": "For FLAG: why this field is uncertain.",
-                        },
-                        "source_quote": {
-                            "type": "string",
-                            "description": "The user's EXACT words that justify this intent.",
-                        },
-                        "confidence": {
-                            "type": "number",
-                            "description": "0.0-1.0 confidence in this extraction.",
-                        },
+                        "required": ["kind"],
                     },
-                    "required": ["kind"],
-                },
-            }
+                }
+            },
+            "required": ["intents"],
         },
-        "required": ["intents"],
     },
 }
 
