@@ -16,7 +16,8 @@ from pydantic import BaseModel
 # ── requests ─────────────────────────────────────────────────────────
 class TurnRequest(BaseModel):
     utterance: str
-    person_id: int
+    conversation_id: int
+    person_id: int | None = None  # 焦点联系人; 缺省回退到对话记住的焦点
 
 
 class ConfirmRequest(BaseModel):
@@ -26,6 +27,37 @@ class ConfirmRequest(BaseModel):
 class RejectRequest(BaseModel):
     intent_ids: list[int]
     reason: str = ""
+
+
+class CreateConversationRequest(BaseModel):
+    title: str = ""
+    focus_person_id: int | None = None
+
+
+class RenameConversationRequest(BaseModel):
+    title: str
+
+
+class CreatePersonRequest(BaseModel):
+    """新建联系人 —— full_name 必填(person.full_name NOT NULL), 其余可选。"""
+
+    full_name: str
+    employer: str | None = None
+    role: str | None = None
+    location: str | None = None
+    comm_pref: str | None = None
+    relationship: str | None = None
+
+
+class UpdatePersonRequest(BaseModel):
+    """编辑联系人 —— 只改给到的非空字段(走账本 USER_DIRECT PATCH 自动确认)。"""
+
+    full_name: str | None = None
+    employer: str | None = None
+    role: str | None = None
+    location: str | None = None
+    comm_pref: str | None = None
+    relationship: str | None = None
 
 
 # ── responses ────────────────────────────────────────────────────────
@@ -134,3 +166,23 @@ class BannerOut(BaseModel):
 
 class TransitionResult(BaseModel):
     affected: int
+
+
+# ── 对话线程 (聊天容器, crm_api 自有) ──────────────────────────────────
+class ConversationOut(BaseModel):
+    id: int
+    title: str
+    focus_person_id: int | None = None
+    created_at: datetime
+    updated_at: datetime
+    message_count: int = 0
+
+
+class ConvMessageOut(BaseModel):
+    """对话里的一条消息。tools = 这条 agent 回复期间的工具调用回执 (供回看)。"""
+
+    id: int
+    role: str  # "user" | "agent"
+    content: str
+    tools: list[dict[str, Any]] = []
+    created_at: datetime

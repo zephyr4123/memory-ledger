@@ -30,7 +30,13 @@ class FakeResponder:
     def respond(self, *, utterance: str, snapshot: str, turn: int) -> Response:
         return Response(self.reply, (self._patch(utterance, 1),))
 
-    def stream_turn(self, *, utterance: str, ctx: Any) -> Iterator[tuple[str, Any]]:
+    def stream_turn(
+        self, *, utterance: str, ctx: Any, history: Any = None
+    ) -> Iterator[tuple[str, Any]]:
+        # 先"查一把"(可视化用), 再回复, 再暂存一条 PATCH
+        yield ("tool_call", {"id": "c0", "name": "get_contact",
+                             "args": {"contact_id": ctx.focus_person_id}})
+        yield ("tool_result", {"id": "c0", "name": "get_contact", "ok": True})
         yield ("delta", self.reply)
         yield ("intents", [self._patch(utterance, ctx.focus_person_id)])
 
@@ -102,18 +108,85 @@ def test_ledger_history_shows_supersede_and_reject(client: TestClient) -> None:
 
 
 def test_turn_proposes_patch_then_confirm_changes_truth(client: TestClient) -> None:
-    r = client.post("/api/turns", json={"utterance": "she's at Stripe now", "person_id": 1})
+    conv = client.post("/api/conversations", json={"focus_person_id": 1}).json()
+    cid = conv["id"]
+    r = client.post(
+        "/api/turns",
+        json={"utterance": "she's at Stripe now", "conversation_id": cid, "person_id": 1},
+    )
     assert r.status_code == 200
     done = _sse_event(r.text, "done")
     assert len(done["banners"]) == 1  # 高危 PATCH → 待确认, 不偷偷改
     banner = done["banners"][0]
     assert banner["target_field"] == "employer" and banner["proposed_value"] == "Stripe"
+    # 工具调用作为事件被流式吐出 (前端据此可视化)
+    assert _sse_event(r.text, "tool_call")["name"] == "get_contact"
     # 确认前: 真相仍是 Globex
     assert client.get("/api/people/1").json()["employer"] == "Globex"
     # 确认后: 真相变 Stripe
     assert client.post("/api/intents/confirm",
                        json={"intent_ids": [banner["intent_id"]]}).json()["affected"] == 1
     assert client.get("/api/people/1").json()["employer"] == "Stripe"
+    # 两条消息已落盘, agent 那条带工具调用回执; 线程自动起了标题
+    msgs = client.get(f"/api/conversations/{cid}/messages").json()
+    assert [m["role"] for m in msgs] == ["user", "agent"]
+    assert msgs[1]["tools"][0]["name"] == "get_contact"
+    assert client.get("/api/conversations").json()[0]["title"] != ""
+
+
+def test_create_person(client: TestClient) -> None:
+    p = client.post(
+        "/api/people",
+        json={"full_name": "周深", "employer": "声入人心", "comm_pref": "短信"},
+    ).json()
+    assert p["full_name"] == "周深" and p["employer"] == "声入人心"
+    assert p["comm_pref"] == "sms"  # 中文 → canonical enum
+    assert any(x["full_name"] == "周深" for x in client.get("/api/people").json())
+    # full_name 必填
+    assert client.post("/api/people", json={"employer": "X"}).status_code == 422
+
+
+def test_update_person_overrides_agent_value(client: TestClient) -> None:
+    # 1 号现在 employer=Globex(agent 改的); 用户直接编辑成"网易" → USER_DIRECT 应压过
+    out = client.patch("/api/people/1", json={"employer": "网易"}).json()
+    assert out["employer"] == "网易"
+    assert client.get("/api/people/1").json()["employer"] == "网易"
+    # 留痕: 账本里出现一条 USER_DIRECT 的 employer PATCH
+    events = client.get("/api/people/1/ledger").json()
+    assert any(
+        e["source_layer"] == "USER_DIRECT" and e["target_field"] == "employer"
+        and e["status"] == "APPLIED"
+        for e in events
+    )
+
+
+def test_delete_person_cascades(client: TestClient) -> None:
+    # 建个聚焦 1 号的线程, 用来验证删人后焦点被置空(线程保留)
+    conv = client.post("/api/conversations", json={"focus_person_id": 1}).json()
+    before = client.get("/api/people/1/ledger").json()
+    assert len(before) > 0
+    res = client.delete("/api/people/1").json()
+    assert res["ok"] is True and res["purged_intents"] >= len(before)
+    # 真相 404 + 列表里消失
+    assert client.get("/api/people/1").status_code == 404
+    assert all(x["id"] != 1 for x in client.get("/api/people").json())
+    # 关联线程焦点被置空(不留悬空引用), 线程本身保留
+    convs = {c["id"]: c for c in client.get("/api/conversations").json()}
+    assert conv["id"] in convs and convs[conv["id"]]["focus_person_id"] is None
+    # 删不存在 → 404
+    assert client.delete("/api/people/1").status_code == 404
+
+
+def test_conversation_crud(client: TestClient) -> None:
+    c = client.post("/api/conversations", json={"focus_person_id": 1}).json()
+    cid = c["id"]
+    assert c["title"] == "" and c["focus_person_id"] == 1
+    assert any(x["id"] == cid for x in client.get("/api/conversations").json())
+    renamed = client.patch(f"/api/conversations/{cid}", json={"title": "工作近况"}).json()
+    assert renamed["title"] == "工作近况"
+    assert client.delete(f"/api/conversations/{cid}").json()["ok"] is True
+    assert all(x["id"] != cid for x in client.get("/api/conversations").json())
+    assert client.delete(f"/api/conversations/{cid}").status_code == 404
 
 
 def test_as_of_time_travel(client: TestClient) -> None:

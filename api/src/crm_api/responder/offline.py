@@ -23,6 +23,12 @@ class OfflineResponder:
     def respond(self, *, utterance: str, snapshot: str, turn: int) -> Response:
         return Response(reply=_NOTICE, intents=())
 
-    def stream_turn(self, *, utterance: str, ctx: ToolContext) -> Iterator[tuple[str, Any]]:
+    def stream_turn(
+        self,
+        *,
+        utterance: str,
+        ctx: ToolContext,
+        history: list[dict[str, Any]] | None = None,
+    ) -> Iterator[tuple[str, Any]]:
         yield ("delta", _NOTICE)
         yield ("intents", [])

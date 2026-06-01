@@ -9,9 +9,10 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from .config import Settings
+from .conversations import ensure_chat_schema
 from .db import ensure_schema, make_pool
 from .responder import make_responder
-from .routes import chat, health, intents, people
+from .routes import chat, conversations, health, intents, people
 from .seed import seed_demo
 
 
@@ -23,6 +24,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     pool.wait(timeout=15.0)
     with pool.connection() as conn:
         ensure_schema(conn)
+        ensure_chat_schema(conn)
         seed_demo(conn, settings.user_id)
     app.state.pool = pool
     app.state.responder = make_responder(settings)
@@ -43,7 +45,13 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         allow_methods=["*"],
         allow_headers=["*"],
     )
-    for router in (health.router, chat.router, people.router, intents.router):
+    for router in (
+        health.router,
+        chat.router,
+        people.router,
+        intents.router,
+        conversations.router,
+    ):
         app.include_router(router, prefix="/api")
     return app
 

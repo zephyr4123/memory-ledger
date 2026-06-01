@@ -22,7 +22,11 @@ class TurnResponder(Protocol):
     def respond(self, *, utterance: str, snapshot: str, turn: int) -> Any: ...
 
     def stream_turn(
-        self, *, utterance: str, ctx: ToolContext
+        self,
+        *,
+        utterance: str,
+        ctx: ToolContext,
+        history: list[dict[str, Any]] | None = None,
     ) -> Iterator[tuple[str, Any]]: ...
 
 

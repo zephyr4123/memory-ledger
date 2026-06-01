@@ -21,6 +21,7 @@ from ..tools.contacts import TOOL_NAME
 from .prompts import build_agent_system_prompt, build_system_prompt, tool_intents_to_proposed
 
 _MAX_ROUNDS = 6  # agent 自主调工具的轮数上限 (防死循环)
+_MAX_HISTORY = 20  # 回灌进 prompt 的历史消息条数上限 (控 token)
 
 
 def _intents_from_tool_calls(tool_calls: Any) -> list[Any]:
@@ -97,11 +98,29 @@ class LiteLLMResponder:
         return Response(reply=reply, intents=tuple(tool_intents_to_proposed(raw, None)))
 
     # ── 产品主路径: agent loop (流式 + 自主工具调用) ──────────────────────
-    def stream_turn(self, *, utterance: str, ctx: ToolContext) -> Iterator[tuple[str, Any]]:
+    def stream_turn(
+        self,
+        *,
+        utterance: str,
+        ctx: ToolContext,
+        history: list[dict[str, Any]] | None = None,
+    ) -> Iterator[tuple[str, Any]]:
+        """流式跑一轮对话。yield 的事件:
+        ('delta', text)        —— 回复 token
+        ('tool_call', {...})   —— 开始调某工具 (name + 解析好的 args), 供前端实时可视化
+        ('tool_result', {...}) —— 该工具有了结果 (ok 与否)
+        ('intents', [...])     —— 收尾: 本轮暂存的待写改动
+        """
         messages: list[dict[str, Any]] = [
-            {"role": "system", "content": build_agent_system_prompt(_focus_line(ctx))},
-            {"role": "user", "content": utterance},
+            {"role": "system", "content": build_agent_system_prompt(_focus_line(ctx))}
         ]
+        for h in (history or [])[-_MAX_HISTORY:]:  # 同一线程内的上下文 → 真多轮
+            text = (h.get("content") or "").strip()
+            if text:
+                role = "assistant" if h.get("role") == "agent" else "user"
+                messages.append({"role": role, "content": text})
+        messages.append({"role": "user", "content": utterance})
+
         tools = openai_schemas()
         answered = False
 
@@ -110,7 +129,7 @@ class LiteLLMResponder:
             if not calls:  # 模型直接给了回复 → 这轮就是最终答复
                 answered = True
                 break
-            # 把本轮 assistant(含 tool_calls)+ 每个工具结果回灌, 供下一轮参考
+            # 把本轮 assistant(含 tool_calls)回灌, 供下一轮参考
             messages.append(
                 {
                     "role": "assistant",
@@ -130,7 +149,10 @@ class LiteLLMResponder:
                     args = json.loads(c["args"]) if c["args"].strip() else {}
                 except ValueError:
                     args = {}
+                yield ("tool_call", {"id": c["id"], "name": c["name"], "args": args})
                 result = dispatch(c["name"], args, ctx)
+                ok = not (isinstance(result, dict) and "error" in result)
+                yield ("tool_result", {"id": c["id"], "name": c["name"], "ok": ok})
                 messages.append(
                     {
                         "role": "tool",
