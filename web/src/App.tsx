@@ -13,19 +13,34 @@ import { useCrm } from "./hooks/useCrm";
 import type { PersonInput } from "./lib/types";
 import { Panel } from "./ui/Panel";
 
-const enter = (delay: number) => ({
-  initial: { opacity: 0, y: 12 },
-  animate: { opacity: 1, y: 0 },
-  transition: { duration: 0.55, ease: [0.22, 1, 0.36, 1] as const, delay },
-});
+/* 两个面板开合图标 —— 与 Claude 顶栏同构: 左收会话列表, 右收记忆栏 */
+function IconPanelLeft() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden>
+      <rect x="2.25" y="3.25" width="13.5" height="11.5" rx="2.5" stroke="currentColor" strokeWidth="1.5" />
+      <line x1="7" y1="3.75" x2="7" y2="14.25" stroke="currentColor" strokeWidth="1.5" />
+    </svg>
+  );
+}
+function IconPanelRight() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden>
+      <rect x="2.25" y="3.25" width="13.5" height="11.5" rx="2.5" stroke="currentColor" strokeWidth="1.5" />
+      <line x1="11" y1="3.75" x2="11" y2="14.25" stroke="currentColor" strokeWidth="1.5" />
+    </svg>
+  );
+}
 
 export default function App() {
   const crm = useCrm();
   const live = crm.health?.llm === "live";
   const nameOf = (id: number) => crm.people.find((p) => p.id === id)?.full_name ?? "联系人";
+  const focusName = crm.selectedId != null ? nameOf(crm.selectedId) : null;
 
   const [editor, setEditor] = useState<null | { mode: "create" | "edit" }>(null);
   const [snapOpen, setSnapOpen] = useState(true);
+  const [navOpen, setNavOpen] = useState(true);
+  const [memOpen, setMemOpen] = useState(true);
 
   const submitContact = async (data: PersonInput) => {
     if (editor?.mode === "edit" && crm.selectedId != null) {
@@ -45,25 +60,46 @@ export default function App() {
       <div className={styles.shell}>
         <motion.header
           className={styles.topbar}
-          initial={{ opacity: 0, y: -8 }}
+          initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
         >
-          <div className={styles.brand}>
+          <div className={styles.topLeft}>
+            <button
+              className={`${styles.railToggle} ${navOpen ? styles.railToggleOn : ""}`}
+              onClick={() => setNavOpen((o) => !o)}
+              title={navOpen ? "收起会话列表" : "展开会话列表"}
+              aria-pressed={navOpen}
+            >
+              <IconPanelLeft />
+            </button>
             <span className={styles.wordmark}>
               念念手记<span className={styles.glyph}>✎</span>
             </span>
             <span className={styles.tagline}>你讲述，小本为你记录；修改既有信息前，先经你确认</span>
           </div>
-          <div className={`${styles.status} ${live ? styles.statusLive : ""}`}>
-            <span className={styles.statusDot} />
-            {live ? "小本在线" : "离线"}
+
+          <div className={styles.topRight}>
+            <span className={`${styles.status} ${live ? styles.statusLive : ""}`}>
+              <span className={styles.statusDot} />
+              {live ? "小本在线" : "离线"}
+            </span>
+            <button
+              className={`${styles.railToggle} ${styles.memToggle} ${memOpen ? styles.railToggleOn : ""}`}
+              onClick={() => setMemOpen((o) => !o)}
+              title={memOpen ? "收起记忆栏" : "展开记忆栏"}
+              aria-pressed={memOpen}
+            >
+              <IconPanelRight />
+              <span className={styles.memToggleLabel}>记忆</span>
+            </button>
           </div>
         </motion.header>
 
-        <main className={styles.grid}>
-          <motion.div className={styles.col} {...enter(0.05)}>
-            <Panel label="对话" className={styles.fill}>
+        <main className={styles.main}>
+          {/* ── 左: 会话列表 (可折叠) ── */}
+          <aside className={styles.navRail} data-open={navOpen}>
+            <div className={styles.navInner}>
               <ConversationList
                 conversations={crm.conversations}
                 activeId={crm.activeConvId}
@@ -72,39 +108,11 @@ export default function App() {
                 onRename={crm.renameConversation}
                 onDelete={crm.deleteConversation}
               />
-            </Panel>
-          </motion.div>
-
-          <motion.div className={styles.colCenter} {...enter(0.12)}>
-            <div className={styles.strip}>
-              <ContactStrip
-                people={crm.people}
-                selectedId={crm.selectedId}
-                onSelect={crm.setSelectedId}
-                onAdd={() => setEditor({ mode: "create" })}
-              />
             </div>
-            <Panel flush className={styles.truth}>
-              <PersonCard
-                person={crm.person}
-                asOf={crm.asOf}
-                collapsed={!snapOpen}
-                onToggle={() => setSnapOpen((o) => !o)}
-                onEdit={() => setEditor({ mode: "edit" })}
-                onResolve={crm.resolveBanner}
-              />
-              {snapOpen && crm.person && (
-                <div className={styles.scrubber}>
-                  <TimeScrubber ledger={crm.ledger} asOf={crm.asOf} onTravel={crm.travelTo} />
-                </div>
-              )}
-            </Panel>
-            <Panel label="变更记录" className={`${styles.fill} ${styles.ledgerPanel}`} bodyFlow>
-              <LedgerTimeline events={crm.ledger} />
-            </Panel>
-          </motion.div>
+          </aside>
 
-          <motion.div className={`${styles.col} ${styles.chatCol}`} {...enter(0.19)}>
+          {/* ── 中: 对话主舞台 ── */}
+          <section className={styles.stage}>
             <ChatPanel
               messages={crm.messages}
               banners={crm.banners}
@@ -112,11 +120,48 @@ export default function App() {
               llm={crm.health?.llm ?? null}
               model={crm.health?.model ?? null}
               canSend={crm.activeConvId != null}
+              focusName={focusName}
               nameOf={nameOf}
               onSend={crm.sendTurn}
               onResolve={crm.resolveBanner}
             />
-          </motion.div>
+          </section>
+
+          {/* ── 右: 记忆栏 (可折叠) ── */}
+          <aside className={styles.memRail} data-open={memOpen}>
+            <div className={styles.memInner}>
+              <div className={styles.memHead}>
+                <span className="eyebrow">记忆</span>
+                <span className={styles.memHint}>小本为你存留的人与事</span>
+              </div>
+              <div className={styles.strip}>
+                <ContactStrip
+                  people={crm.people}
+                  selectedId={crm.selectedId}
+                  onSelect={crm.setSelectedId}
+                  onAdd={() => setEditor({ mode: "create" })}
+                />
+              </div>
+              <Panel flush className={styles.truth}>
+                <PersonCard
+                  person={crm.person}
+                  asOf={crm.asOf}
+                  collapsed={!snapOpen}
+                  onToggle={() => setSnapOpen((o) => !o)}
+                  onEdit={() => setEditor({ mode: "edit" })}
+                  onResolve={crm.resolveBanner}
+                />
+                {snapOpen && crm.person && (
+                  <div className={styles.scrubber}>
+                    <TimeScrubber ledger={crm.ledger} asOf={crm.asOf} onTravel={crm.travelTo} />
+                  </div>
+                )}
+              </Panel>
+              <Panel label="变更记录" className={`${styles.fill} ${styles.ledgerPanel}`} bodyFlow>
+                <LedgerTimeline events={crm.ledger} />
+              </Panel>
+            </div>
+          </aside>
         </main>
       </div>
 

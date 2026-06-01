@@ -9,30 +9,77 @@
 /* ── 安静的日光抬头 ── */
 .topbar {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   justify-content: space-between;
   gap: 24px;
-  padding: 0 4px;
+  padding: 0 2px;
 }
-.brand {
+.topLeft {
   display: flex;
-  align-items: baseline;
-  gap: 16px;
-  flex-wrap: wrap;
+  align-items: center;
+  gap: 14px;
+  min-width: 0;
 }
+.topRight {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex: none;
+}
+
+/* 面板开合按钮: 安静描边方钮, 选中态染上鼠尾草 */
+.railToggle {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  height: 34px;
+  padding: 0 9px;
+  border-radius: var(--r-sm);
+  color: var(--ink-faint);
+  border: 1px solid transparent;
+  transition:
+    color var(--dur-fast) var(--ease),
+    background var(--dur-fast) var(--ease),
+    border-color var(--dur-fast) var(--ease);
+}
+.railToggle:hover {
+  color: var(--ink);
+  background: var(--surface);
+}
+.railToggleOn {
+  color: var(--sage-ink);
+}
+.railToggleOn:hover {
+  color: var(--sage-deep);
+  background: var(--sage-soft);
+}
+.memToggle {
+  padding: 0 12px 0 10px;
+}
+.memToggleLabel {
+  font-size: 12.5px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+}
+
 .wordmark {
   font-size: 19px;
   font-weight: 600;
   letter-spacing: -0.01em;
   color: var(--ink);
+  white-space: nowrap;
 }
 .glyph {
   color: var(--sage);
   padding: 0 1px;
 }
 .tagline {
-  font-size: 13.5px;
+  font-size: 13px;
   color: var(--ink-dim);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .status {
@@ -44,6 +91,7 @@
   letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--ink-faint);
+  white-space: nowrap;
 }
 .statusLive {
   color: var(--sage-ink);
@@ -58,48 +106,96 @@
   background: var(--sage);
 }
 
-/* ── 三区工作室: 漂浮卡 + 大间距, 无硬列边 ── */
-.grid {
+/* ── 三区主舞台: 对话居中, 两侧可折叠伴随栏 ── */
+.main {
   flex: 1;
   min-height: 0;
-  display: grid;
-  grid-template-columns: 240px minmax(0, 1fr) 408px;
+  display: flex;
   gap: var(--gap);
 }
 
-/* 焦点联系人头像条 (中间栏顶) */
+/* 折叠栏通用: 用 CSS width 过渡 (媒体查询可覆盖, 不与 framer 内联样式打架);
+   内层固定宽 → 收起动画时内容整体平移而非被挤压。 */
+.navRail,
+.memRail {
+  flex: none;
+  min-height: 0;
+  overflow: hidden;
+  transition:
+    width var(--dur) var(--ease),
+    opacity var(--dur) var(--ease),
+    margin var(--dur) var(--ease);
+}
+.navRail {
+  width: 264px;
+}
+.memRail {
+  width: 396px;
+}
+.navRail[data-open="false"],
+.memRail[data-open="false"] {
+  width: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+.navRail[data-open="false"] {
+  margin-right: calc(var(--gap) * -1);
+}
+.memRail[data-open="false"] {
+  margin-left: calc(var(--gap) * -1);
+}
+
+.navInner {
+  width: 264px;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+.memInner {
+  width: 396px;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap);
+  min-height: 0;
+}
+
+/* ── 中央对话舞台 ── */
+.stage {
+  flex: 1 1 0;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+}
+
+/* ── 记忆栏内部 ── */
+.memHead {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  padding: 0 2px;
+}
+.memHint {
+  font-size: 12px;
+  color: var(--ink-faint);
+}
 .strip {
   flex: none;
 }
 
-.col {
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
+/* 人卡 + 时光机同住一张卡; 封顶 46% —— 快照再长也给「变更记录」留出至少一半。 */
+.truth {
+  flex: 0 1 auto;
   min-height: 0;
+  max-height: 46%;
 }
-.colCenter {
-  display: flex;
-  flex-direction: column;
-  gap: var(--gap);
-  min-width: 0;
+.ledgerPanel {
+  flex: 1 1 0;
   min-height: 0;
 }
 .fill {
   flex: 1;
-  min-height: 0;
-}
-
-/* 人卡 + 时光机 同住一张卡; 关键: 封顶 48% —— 快照再长也不许吃满整列,
-   永远给「记过的事」留出至少一半(超出就卡内滚动)。折叠后自然压扁, 让得更多。 */
-.truth {
-  flex: 0 1 auto;
-  min-height: 0;
-  max-height: 48%;
-}
-/* 「记过的事」是主视: 吃掉快照之外的全部高度 */
-.ledgerPanel {
-  flex: 1 1 0;
   min-height: 0;
 }
 .scrubber {
@@ -108,25 +204,41 @@
   border-top: 1px solid var(--line);
 }
 
-.chatCol {
-  overflow: hidden;
-}
-
-/* 窄屏: 单列可滚动, 三区(含聊天 + 闸门)全部保留可达 —— 不再隐藏聊天列,
-   否则确认闸门会在平板/手机上消失、写入流程被切断。 */
-@media (max-width: 1120px) {
+/* 窄屏: 纵向堆叠, 三区(含确认闸门)全部保留可达, 折叠态强制展开。 */
+@media (max-width: 1180px) {
   .shell {
     height: auto;
     min-height: 100vh;
     overflow: auto;
   }
-  .grid {
-    grid-template-columns: minmax(0, 1fr);
+  .tagline {
+    display: none;
   }
-  .fill {
-    min-height: 280px;
+  .main {
+    flex-direction: column;
   }
-  .chatCol {
-    min-height: 560px;
+  .navRail,
+  .memRail {
+    width: 100%;
+    opacity: 1;
+    pointer-events: auto;
+    margin: 0;
+    overflow: visible;
+  }
+  .navInner,
+  .memInner {
+    width: 100%;
+  }
+  .navInner {
+    min-height: 240px;
+  }
+  .stage {
+    min-height: 60vh;
+  }
+  .truth {
+    max-height: none;
+  }
+  .ledgerPanel {
+    min-height: 360px;
   }
 }

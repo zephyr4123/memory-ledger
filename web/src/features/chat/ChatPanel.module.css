@@ -1,7 +1,8 @@
 .panel {
   display: flex;
   flex-direction: column;
-  height: 100%;
+  flex: 1;
+  width: 100%;
   min-height: 0;
   background: var(--surface);
   border: 1px solid var(--line);
@@ -13,7 +14,6 @@
 .header {
   display: flex;
   align-items: center;
-  justify-content: space-between;
   gap: 12px;
   padding: 16px var(--pad);
   border-bottom: 1px solid var(--line);
@@ -24,16 +24,33 @@
   letter-spacing: 0.16em;
   text-transform: uppercase;
   color: var(--ink-dim);
+  flex: none;
+}
+/* 焦点联系人提示 —— 记忆栏收起时仍能看清"在记谁" */
+.focus {
+  font-size: 12.5px;
+  color: var(--ink-faint);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+}
+.focusName {
+  color: var(--sage-ink);
+  font-weight: 600;
+  margin-left: 5px;
 }
 .conn {
   display: inline-flex;
   align-items: center;
   gap: 7px;
+  margin-left: auto;
   font-size: 11px;
   font-weight: 600;
   letter-spacing: 0.12em;
   text-transform: uppercase;
   color: var(--ink-faint);
+  flex: none;
   min-width: 0;
 }
 .connLive {
@@ -61,6 +78,65 @@
   white-space: nowrap;
 }
 
+/* ── 新对话迎接屏: 整体居中 ── */
+.landing {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 26px;
+  padding: 32px clamp(20px, 6vw, 88px);
+  overflow: auto;
+}
+.hero {
+  text-align: center;
+}
+.greeting {
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--sage-ink);
+  margin-bottom: 14px;
+}
+.heroTitle {
+  font-size: clamp(28px, 3.4vw, 40px);
+  line-height: 1.2;
+  color: var(--ink);
+  letter-spacing: -0.015em;
+}
+.composerCenter {
+  width: 100%;
+  max-width: 660px;
+}
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 9px;
+}
+.chip {
+  padding: 8px 15px;
+  font-size: 13px;
+  color: var(--ink-dim);
+  background: var(--surface-bright);
+  border: 1px solid var(--line);
+  border-radius: var(--r-pill);
+  box-shadow: var(--shadow-card);
+  transition:
+    color var(--dur-fast) var(--ease),
+    border-color var(--dur-fast) var(--ease),
+    transform var(--dur-fast) var(--ease);
+}
+.chip:hover {
+  color: var(--sage-ink);
+  border-color: var(--sage-line);
+  transform: translateY(-1px);
+}
+
+/* ── 对话中: 消息流 ── */
 .scroll {
   flex: 1;
   min-height: 0;
@@ -69,31 +145,6 @@
   display: flex;
   flex-direction: column;
   gap: 16px;
-}
-
-.placeholder {
-  margin: auto 0;
-  text-align: center;
-  padding: 8px 4px;
-}
-.phTitle {
-  font-size: 27px;
-  color: var(--ink);
-  margin-bottom: 12px;
-}
-.phBody {
-  font-size: 14px;
-  color: var(--ink-dim);
-  line-height: 1.7;
-  max-width: 40ch;
-  margin: 0 auto;
-}
-.phNote {
-  font-size: 12.5px;
-  line-height: 1.65;
-  color: var(--ink-faint);
-  max-width: 44ch;
-  margin: 14px auto 0;
 }
 
 .msg {
@@ -254,13 +305,13 @@
   transform: scale(0.96);
 }
 
-/* 悬浮胶囊式输入条 (ChatGPT 风): 无边、大圆角、柔影上浮 */
-.composer {
+/* ── 输入条 ── */
+/* 沉底位 (对话中): 上方一抹淡出, 不是硬分割线 */
+.composerBottom {
   position: relative;
   padding: 10px var(--pad) var(--pad);
 }
-/* 让上方消息从输入条后淡出, 不是一条硬分割线 */
-.composer::before {
+.composerBottom::before {
   content: "";
   position: absolute;
   left: 0;
@@ -270,19 +321,25 @@
   background: linear-gradient(to top, var(--surface), transparent);
   pointer-events: none;
 }
+.composerForm {
+  width: 100%;
+}
 .inputWrap {
   display: flex;
   align-items: flex-end;
   gap: 8px;
   padding: 7px 7px 7px 18px;
   background: var(--surface-bright);
+  border: 1px solid var(--line);
   border-radius: 24px;
   box-shadow: var(--shadow-card);
   transition:
     box-shadow var(--dur) var(--ease),
-    transform var(--dur) var(--ease);
+    transform var(--dur) var(--ease),
+    border-color var(--dur) var(--ease);
 }
 .inputWrap:focus-within {
+  border-color: var(--sage-line);
   box-shadow: var(--shadow-lift);
   transform: translateY(-1px);
 }

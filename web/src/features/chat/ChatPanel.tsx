@@ -17,9 +17,22 @@ interface Props {
   llm: "live" | "mock" | null;
   model: string | null;
   canSend: boolean;
+  focusName: string | null;
   nameOf: (id: number) => string;
   onSend: (text: string) => void;
   onResolve: (intentId: number, action: "confirm" | "reject") => void;
+}
+
+const EXAMPLES = ["她升任了产品总监", "他已搬去深圳", "今后改用短信联系"];
+
+function greeting(): string {
+  const h = new Date().getHours();
+  if (h < 5) return "夜深了";
+  if (h < 11) return "上午好";
+  if (h < 13) return "午安";
+  if (h < 18) return "下午好";
+  if (h < 23) return "晚上好";
+  return "夜深了";
 }
 
 /* 确认闸门 —— 全站唯一的"实心陶土块": 高危改动落盘前, 等你签字。 */
@@ -83,6 +96,7 @@ export function ChatPanel({
   llm,
   model,
   canSend,
+  focusName,
   nameOf,
   onSend,
   onResolve,
@@ -91,6 +105,7 @@ export function ChatPanel({
   const scrollRef = useRef<HTMLDivElement>(null);
   const taRef = useRef<HTMLTextAreaElement>(null);
   const live = llm === "live";
+  const empty = messages.length === 0;
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
@@ -102,7 +117,7 @@ export function ChatPanel({
     if (!el) return;
     el.style.height = "auto";
     el.style.height = `${Math.min(el.scrollHeight, 140)}px`;
-  }, [draft]);
+  }, [draft, empty]);
 
   const submit = () => {
     const t = draft.trim();
@@ -120,11 +135,46 @@ export function ChatPanel({
       submit();
     }
   };
+  const fillExample = (text: string) => {
+    setDraft(text);
+    taRef.current?.focus();
+  };
+
+  // 输入条本体 —— 居中(新对话)与沉底(对话中)两处共用同一份, 由 layoutId 平滑过渡。
+  const composer = (
+    <form className={styles.composerForm} onSubmit={onFormSubmit}>
+      <div className={styles.inputWrap}>
+        <textarea
+          ref={taRef}
+          className={styles.input}
+          rows={1}
+          placeholder={canSend ? "向小本讲述…" : "正在准备…"}
+          value={draft}
+          disabled={!canSend || streaming}
+          onChange={(e) => setDraft(e.target.value)}
+          onKeyDown={onKey}
+        />
+        <button
+          className={styles.send}
+          type="submit"
+          disabled={!draft.trim() || streaming || !canSend}
+          aria-label="发送"
+        >
+          {streaming ? <span className={styles.sending} /> : "↑"}
+        </button>
+      </div>
+    </form>
+  );
 
   return (
     <div className={styles.panel}>
       <header className={styles.header}>
         <span className={styles.title}>小本</span>
+        {focusName && (
+          <span className={styles.focus}>
+            关于<b className={styles.focusName}>{focusName}</b>
+          </span>
+        )}
         <span className={`${styles.conn} ${live ? styles.connLive : ""}`}>
           <i className={styles.connDot} />
           <span>{live ? "在线" : "离线"}</span>
@@ -132,66 +182,71 @@ export function ChatPanel({
         </span>
       </header>
 
-      <div className={styles.scroll} ref={scrollRef}>
-        {messages.length === 0 && (
-          <div className={styles.placeholder}>
-            <p className={`display ${styles.phTitle}`}>讲述近况，小本为你逐一记录</p>
-            <p className={styles.phBody}>
-              “她升任产品总监” · “已搬至深圳” · “今后以短信联系”
-            </p>
-            <p className={styles.phNote}>
-              小本在对话间自行检索、记录变化；凡涉及修改既有信息，必先征得你的确认。
-            </p>
-          </div>
-        )}
-        {messages.map((m) => (
+      {empty ? (
+        // ── 新对话: 整体居中的迎接屏 (Claude 式) ──
+        <div className={styles.landing}>
           <motion.div
-            key={m.id}
-            className={`${styles.msg} ${styles[m.role]}`}
-            initial={{ opacity: 0, y: 8 }}
+            className={styles.hero}
+            initial={{ opacity: 0, y: 14 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+            transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1], delay: 0.05 }}
           >
-            <span className={styles.roleTag}>{m.role === "user" ? "你" : "小本"}</span>
-            {m.role === "agent" ? (
-              <AgentBubble m={m} nameOf={nameOf} />
-            ) : (
-              <div className={styles.bubble}>{m.text}</div>
-            )}
+            <p className={styles.greeting}>{greeting()}</p>
+            <h1 className={`display ${styles.heroTitle}`}>讲述近况，小本为你逐一记录</h1>
           </motion.div>
-        ))}
-      </div>
 
-      <div className={styles.gates}>
-        <AnimatePresence>
-          {banners.map((b) => (
-            <GateBanner key={b.intent_id} banner={b} onResolve={onResolve} />
-          ))}
-        </AnimatePresence>
-      </div>
+          <motion.div className={styles.composerCenter} layoutId="composer">
+            {composer}
+          </motion.div>
 
-      <form className={styles.composer} onSubmit={onFormSubmit}>
-        <div className={styles.inputWrap}>
-          <textarea
-            ref={taRef}
-            className={styles.input}
-            rows={1}
-            placeholder={canSend ? "向小本讲述…" : "正在准备…"}
-            value={draft}
-            disabled={!canSend || streaming}
-            onChange={(e) => setDraft(e.target.value)}
-            onKeyDown={onKey}
-          />
-          <button
-            className={styles.send}
-            type="submit"
-            disabled={!draft.trim() || streaming || !canSend}
-            aria-label="发送"
+          <motion.div
+            className={styles.chips}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1], delay: 0.22 }}
           >
-            {streaming ? <span className={styles.sending} /> : "↑"}
-          </button>
+            {EXAMPLES.map((ex) => (
+              <button key={ex} className={styles.chip} onClick={() => fillExample(ex)}>
+                {ex}
+              </button>
+            ))}
+          </motion.div>
         </div>
-      </form>
+      ) : (
+        // ── 对话中: 消息流 + 闸门 + 沉底输入条 ──
+        <>
+          <div className={styles.scroll} ref={scrollRef}>
+            {messages.map((m) => (
+              <motion.div
+                key={m.id}
+                className={`${styles.msg} ${styles[m.role]}`}
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+              >
+                <span className={styles.roleTag}>{m.role === "user" ? "你" : "小本"}</span>
+                {m.role === "agent" ? (
+                  <AgentBubble m={m} nameOf={nameOf} />
+                ) : (
+                  <div className={styles.bubble}>{m.text}</div>
+                )}
+              </motion.div>
+            ))}
+          </div>
+
+          <div className={styles.gates}>
+            <AnimatePresence>
+              {banners.map((b) => (
+                <GateBanner key={b.intent_id} banner={b} onResolve={onResolve} />
+              ))}
+            </AnimatePresence>
+          </div>
+
+          <motion.div className={styles.composerBottom} layoutId="composer">
+            {composer}
+          </motion.div>
+        </>
+      )}
     </div>
   );
 }
