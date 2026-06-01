@@ -30,13 +30,13 @@ export default function App() {
         >
           <div className={styles.brand}>
             <span className={styles.wordmark}>
-              memory<span className={styles.glyph}>·</span>ledger
+              念念手记<span className={styles.glyph}>✎</span>
             </span>
-            <span className={styles.tagline}>改写你的数据前，它会先征求你的同意</span>
+            <span className={styles.tagline}>你说，小本替你记；要改之前先问你一句</span>
           </div>
           <div className={`${styles.status} ${live ? styles.statusLive : ""}`}>
             <span className={styles.statusDot} />
-            {live ? "在线" : "离线"}
+            {live ? "小本在线" : "离线"}
           </div>
         </motion.header>
 
@@ -58,7 +58,7 @@ export default function App() {
                 <TimeScrubber ledger={crm.ledger} asOf={crm.asOf} onTravel={crm.travelTo} />
               </div>
             </Panel>
-            <Panel label="账本 · 溯源" className={styles.fill}>
+            <Panel label="记过的事" className={styles.fill}>
               <LedgerTimeline events={crm.ledger} />
             </Panel>
           </motion.div>

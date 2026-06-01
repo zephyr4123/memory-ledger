@@ -34,7 +34,7 @@ function summarize(e: LedgerEvent): string {
 export function LedgerTimeline({ events }: { events: LedgerEvent[] }) {
   const ordered = [...events].reverse(); // 最新在上
   if (!ordered.length) {
-    return <div className={styles.empty}>账本还是空的 —— 和智能体聊聊它就有了。</div>;
+    return <div className={styles.empty}>还没记下什么 —— 跟小本聊两句就有了。</div>;
   }
   return (
     <ol className={styles.timeline}>
@@ -65,9 +65,9 @@ export function LedgerTimeline({ events }: { events: LedgerEvent[] }) {
               </div>
 
               <div className={`mono ${styles.meta}`}>
-                <span>置信度 {Math.round(e.confidence * 100)}%</span>
-                {e.superseded_by && <span>↳ 被 #{e.superseded_by} 取代</span>}
-                {e.rejected_reason && <span>已驳回 · {e.rejected_reason}</span>}
+                <span>有 {Math.round(e.confidence * 100)}% 把握</span>
+                {e.superseded_by && <span>↳ 被第 {e.superseded_by} 条换掉</span>}
+                {e.rejected_reason && <span>你没让记 · {e.rejected_reason}</span>}
                 <span className={styles.id}>#{e.id}</span>
               </div>
             </div>

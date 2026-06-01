@@ -30,7 +30,7 @@ function GateBanner({ banner, onResolve }: { banner: Banner; onResolve: Props["o
     >
       <div className={styles.gateHead}>
         <span className={styles.gateGlyph}>✎</span>
-        <span className={styles.gateLabel}>落盘前请确认</span>
+        <span className={styles.gateLabel}>这条要改，先问问你</span>
         <span className={styles.gateConf}>{Math.round(banner.confidence * 100)}%</span>
       </div>
       <div className={styles.gateBody}>
@@ -42,10 +42,10 @@ function GateBanner({ banner, onResolve }: { banner: Banner; onResolve: Props["o
       </div>
       <div className={styles.gateActions}>
         <button className={styles.reject} onClick={() => onResolve(banner.intent_id, "reject")}>
-          驳回
+          不改
         </button>
         <button className={styles.confirm} onClick={() => onResolve(banner.intent_id, "confirm")}>
-          确认
+          改吧
         </button>
       </div>
     </motion.div>
@@ -90,7 +90,7 @@ export function ChatPanel({
   return (
     <div className={styles.panel}>
       <header className={styles.header}>
-        <span className={styles.title}>智能体</span>
+        <span className={styles.title}>小本</span>
         <span className={`${styles.conn} ${live ? styles.connLive : ""}`}>
           <i className={styles.connDot} />
           <span>{live ? "在线" : "离线"}</span>
@@ -101,19 +101,19 @@ export function ChatPanel({
       <div className={styles.scroll} ref={scrollRef}>
         {messages.length === 0 && (
           <div className={styles.placeholder}>
-            <p className={`display ${styles.phTitle}`}>跟智能体说点什么。</p>
+            <p className={`display ${styles.phTitle}`}>随口说一句，小本替你记一笔</p>
             <p className={styles.phBody}>
-              “她升任产品总监了” · “她搬去了深圳” · “以后短信联系她就行”。
+              “她升产品总监了” · “搬去深圳了” · “以后发短信就行”
             </p>
             <p className={styles.phNote}>
-              智能体会即时回复你，并把其中的变动整理成结构化记录 ——
-              高危改动会先停在确认闸门，等你点头才真正落盘。
+              小本一边跟你搭话，一边把这些变化记进本子;
+              要改你写过的事，它会先停下来问你一句，你点头才改。
             </p>
           </div>
         )}
         {messages.map((m) => (
           <div key={m.id} className={`${styles.msg} ${styles[m.role]}`}>
-            <span className={styles.roleTag}>{m.role === "user" ? "你" : "智能体"}</span>
+            <span className={styles.roleTag}>{m.role === "user" ? "你" : "小本"}</span>
             <div className={styles.bubble}>
               {m.text}
               {m.streaming && <span className={styles.caret} />}
@@ -134,7 +134,7 @@ export function ChatPanel({
         <textarea
           className={styles.input}
           rows={1}
-          placeholder={hasContact ? "和智能体说点什么…" : "请先选择一位联系人"}
+          placeholder={hasContact ? "跟小本说一句…" : "先选一个人"}
           value={draft}
           disabled={!hasContact || streaming}
           onChange={(e) => setDraft(e.target.value)}

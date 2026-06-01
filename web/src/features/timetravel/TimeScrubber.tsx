@@ -29,7 +29,7 @@ export function TimeScrubber({ ledger, asOf, onTravel }: Props) {
   return (
     <div className={styles.wrap}>
       <div className={styles.head}>
-        <span className="eyebrow">时光机</span>
+        <span className="eyebrow">翻回那天</span>
         <span className={`${styles.readout} ${asOf ? styles.past : styles.now}`}>
           {asOf == null ? "● 现在" : fmtDateTime(asOf)}
         </span>
@@ -94,8 +94,8 @@ export function TimeScrubber({ ledger, asOf, onTravel }: Props) {
 
       <div className={styles.hint}>
         {n
-          ? "拖动时间轴 —— 真相会在任意历史时刻重新合成"
-          : "还没有历史 —— 和智能体对话来写入记忆"}
+          ? "拖一拖，看看 TA 那时候是什么样"
+          : "还没有记录 —— 跟小本说点什么就有了"}
       </div>
     </div>
   );

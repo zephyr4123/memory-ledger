@@ -29,26 +29,26 @@ function Field({ label, value }: { label: string; value: string | null }) {
 
 export function PersonCard({ person, asOf }: { person: Person | null; asOf: string | null }) {
   if (!person) {
-    return <div className={styles.empty}>选择一位联系人，查看 ta 的记忆。</div>;
+    return <div className={styles.empty}>选一个人，看看小本替你记下的。</div>;
   }
   const past = asOf != null;
   return (
     <div className={`${styles.card} ${past ? styles.cardPast : ""}`}>
       <div className={styles.topline}>
-        <span className="eyebrow">当前真相</span>
+        <span className="eyebrow">TA 现在的样子</span>
         {past ? (
           <span className={`${styles.state} ${styles.statePast}`} title={asOf ?? undefined}>
-            回溯至 {fmtDateTime(asOf)}
+            翻回 {fmtDateTime(asOf)}
           </span>
         ) : (
           <span className={`${styles.state} ${styles.stateLive}`}>
             <i className={styles.liveDot} />
-            实时 · 现在
+            现在
           </span>
         )}
       </div>
 
-      <h1 className={`display ${styles.name}`}>{person.full_name ?? "未命名"}</h1>
+      <h1 className={`display ${styles.name}`}>{person.full_name ?? "还没名字"}</h1>
 
       <div className={styles.fields}>
         {FIELD_KEYS.map((key) => {
@@ -66,18 +66,18 @@ export function PersonCard({ person, asOf }: { person: Person | null; asOf: stri
       <div className={styles.provenance}>
         <span className={styles.count}>
           <i className={`${styles.cdot} ${styles.cFact}`} />
-          <b>{person.assertions.length}</b> 事实
+          <b>{person.assertions.length}</b> 条记录
         </span>
         <span className={styles.count}>
           <i className={`${styles.cdot} ${styles.cNote}`} />
-          <b>{person.annotations.length}</b> 批注
+          <b>{person.annotations.length}</b> 条备注
         </span>
         <span className={styles.count}>
           <i className={`${styles.cdot} ${styles.cFlag}`} />
-          <b>{person.flags.length}</b> 存疑
+          <b>{person.flags.length}</b> 处拿不准
         </span>
         <span className={styles.synth}>
-          由 {person.intents_applied_as_of.length} 条已生效变更合成
+          这些都是从 {person.intents_applied_as_of.length} 条记录拼出来的
         </span>
       </div>
     </div>
