@@ -10,6 +10,11 @@
   grid-template-columns: 16px 1fr;
   gap: 14px;
   padding: 16px 0;
+  border-radius: 10px;
+  transition: background var(--dur-fast) var(--ease);
+}
+.row:hover {
+  background: rgba(42, 39, 34, 0.022);
 }
 /* 一条贯穿的细线索 (手稿连缀感), 非每行画框 */
 .row::before {
@@ -42,9 +47,20 @@
   background: var(--sage);
   border-color: var(--sage);
 }
+/* 等你点头: 轻轻一圈陶土"涟漪", 把待办拉到眼前(reduced-motion 下自动静止) */
 .s_PROPOSED {
   background: var(--surface-bright);
   border-color: var(--clay);
+  animation: pendingPing 2.4s var(--ease) infinite;
+}
+@keyframes pendingPing {
+  0% {
+    box-shadow: 0 0 0 0 rgba(201, 138, 60, 0.34);
+  }
+  70%,
+  100% {
+    box-shadow: 0 0 0 7px rgba(201, 138, 60, 0);
+  }
 }
 .s_SUPERSEDED,
 .s_EXPIRED {

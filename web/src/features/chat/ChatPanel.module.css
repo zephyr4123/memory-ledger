@@ -248,53 +248,95 @@
   background: var(--clay-deep);
   border-color: var(--clay-deep);
 }
+.reject:active,
+.confirm:active {
+  transform: scale(0.96);
+}
 
+/* 悬浮胶囊式输入条 (ChatGPT 风): 无边、大圆角、柔影上浮 */
 .composer {
+  position: relative;
+  padding: 10px var(--pad) var(--pad);
+}
+/* 让上方消息从输入条后淡出, 不是一条硬分割线 */
+.composer::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: -28px;
+  height: 28px;
+  background: linear-gradient(to top, var(--surface), transparent);
+  pointer-events: none;
+}
+.inputWrap {
   display: flex;
-  gap: 9px;
   align-items: flex-end;
-  padding: var(--pad);
-  border-top: 1px solid var(--line);
+  gap: 8px;
+  padding: 7px 7px 7px 18px;
+  background: var(--surface-bright);
+  border-radius: 24px;
+  box-shadow: var(--shadow-card);
+  transition:
+    box-shadow var(--dur) var(--ease),
+    transform var(--dur) var(--ease);
+}
+.inputWrap:focus-within {
+  box-shadow: var(--shadow-lift);
+  transform: translateY(-1px);
 }
 .input {
   flex: 1;
+  min-width: 0;
   resize: none;
-  max-height: 120px;
-  padding: 11px 13px;
-  background: var(--surface-bright);
-  border: 1px solid var(--line-strong);
-  border-radius: var(--r-md);
+  max-height: 140px;
+  padding: 9px 0;
+  background: transparent;
+  border: none;
+  outline: none;
   font-size: 14px;
   line-height: 1.5;
-  outline: none;
-  transition:
-    border-color var(--dur-fast) var(--ease),
-    box-shadow var(--dur-fast) var(--ease);
-}
-.input:focus {
-  border-color: var(--sage-line);
-  box-shadow: 0 0 0 3px var(--sage-soft);
 }
 .input::placeholder {
   color: var(--ink-faint);
 }
 .send {
   flex: none;
-  width: 40px;
-  height: 40px;
+  width: 38px;
+  height: 38px;
   display: grid;
   place-items: center;
   font-size: 17px;
-  border-radius: var(--r-md);
+  border-radius: 50%;
   color: var(--surface-bright);
   background: var(--sage-ink);
-  transition: all var(--dur-fast) var(--ease);
+  transition:
+    background var(--dur-fast) var(--ease),
+    transform var(--dur-fast) var(--ease);
 }
 .send:hover:not(:disabled) {
   background: var(--sage-deep);
+  transform: scale(1.06);
+}
+.send:active:not(:disabled) {
+  transform: scale(0.94);
 }
 .send:disabled {
   background: var(--surface-sunk);
   color: var(--ink-faint);
   cursor: default;
+}
+/* 发送中: 小本在想 —— 旋转小环 */
+.sending {
+  width: 15px;
+  height: 15px;
+  border-radius: 50%;
+  border: 2px solid var(--line-strong);
+  border-top-color: var(--sage);
+  animation: spin 0.7s linear infinite;
+}
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
 }

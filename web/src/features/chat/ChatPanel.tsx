@@ -64,11 +64,20 @@ export function ChatPanel({
 }: Props) {
   const [draft, setDraft] = useState("");
   const scrollRef = useRef<HTMLDivElement>(null);
+  const taRef = useRef<HTMLTextAreaElement>(null);
   const live = llm === "live";
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
   }, [messages, banners]);
+
+  // 自动增高: 随内容长高, 封顶 140px (ChatGPT 式)
+  useEffect(() => {
+    const el = taRef.current;
+    if (!el) return;
+    el.style.height = "auto";
+    el.style.height = `${Math.min(el.scrollHeight, 140)}px`;
+  }, [draft]);
 
   const submit = () => {
     const t = draft.trim();
@@ -112,13 +121,19 @@ export function ChatPanel({
           </div>
         )}
         {messages.map((m) => (
-          <div key={m.id} className={`${styles.msg} ${styles[m.role]}`}>
+          <motion.div
+            key={m.id}
+            className={`${styles.msg} ${styles[m.role]}`}
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+          >
             <span className={styles.roleTag}>{m.role === "user" ? "你" : "小本"}</span>
             <div className={styles.bubble}>
               {m.text}
               {m.streaming && <span className={styles.caret} />}
             </div>
-          </div>
+          </motion.div>
         ))}
       </div>
 
@@ -131,23 +146,26 @@ export function ChatPanel({
       </div>
 
       <form className={styles.composer} onSubmit={onFormSubmit}>
-        <textarea
-          className={styles.input}
-          rows={1}
-          placeholder={hasContact ? "跟小本说一句…" : "先选一个人"}
-          value={draft}
-          disabled={!hasContact || streaming}
-          onChange={(e) => setDraft(e.target.value)}
-          onKeyDown={onKey}
-        />
-        <button
-          className={styles.send}
-          type="submit"
-          disabled={!draft.trim() || streaming || !hasContact}
-          aria-label="发送"
-        >
-          {streaming ? "…" : "↑"}
-        </button>
+        <div className={styles.inputWrap}>
+          <textarea
+            ref={taRef}
+            className={styles.input}
+            rows={1}
+            placeholder={hasContact ? "跟小本说一句…" : "先选一个人"}
+            value={draft}
+            disabled={!hasContact || streaming}
+            onChange={(e) => setDraft(e.target.value)}
+            onKeyDown={onKey}
+          />
+          <button
+            className={styles.send}
+            type="submit"
+            disabled={!draft.trim() || streaming || !hasContact}
+            aria-label="发送"
+          >
+            {streaming ? <span className={styles.sending} /> : "↑"}
+          </button>
+        </div>
       </form>
     </div>
   );

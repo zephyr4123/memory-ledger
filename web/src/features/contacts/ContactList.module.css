@@ -16,10 +16,15 @@
   transition:
     background var(--dur-fast) var(--ease),
     box-shadow var(--dur-fast) var(--ease),
-    border-color var(--dur-fast) var(--ease);
+    border-color var(--dur-fast) var(--ease),
+    transform var(--dur-fast) var(--ease);
 }
 .item:hover {
   background: rgba(42, 39, 34, 0.035);
+  transform: translateX(2px);
+}
+.item:active {
+  transform: translateX(2px) scale(0.99);
 }
 /* 选中: 抬到更亮的纸面 + 柔影浮起 + 鼠尾草左标 */
 .active,
