@@ -26,8 +26,8 @@ const KIND_GLYPH: Record<string, string> = {
 type Filter = "all" | "live" | "pending";
 const FILTERS: { key: Filter; label: string }[] = [
   { key: "all", label: "全部" },
-  { key: "live", label: "在用" },
-  { key: "pending", label: "等你点头" },
+  { key: "live", label: "生效中" },
+  { key: "pending", label: "待确认" },
 ];
 
 function summarize(e: LedgerEvent): string {
@@ -82,7 +82,7 @@ export function LedgerTimeline({ events }: { events: LedgerEvent[] }) {
 
       {ordered.length === 0 ? (
         <div className={styles.empty}>
-          {events.length === 0 ? "还没记下什么 —— 跟小本聊两句就有了。" : "这个筛选下没有记录。"}
+          {events.length === 0 ? "尚无记录 —— 与小本交谈即可生成。" : "当前筛选下暂无记录。"}
         </div>
       ) : (
         <ol className={styles.timeline}>
@@ -136,14 +136,14 @@ export function LedgerTimeline({ events }: { events: LedgerEvent[] }) {
                               />
                             </span>
                             <span className={`mono ${styles.confPct}`}>
-                              {Math.round(e.confidence * 100)}% 把握
+                              把握 {Math.round(e.confidence * 100)}%
                             </span>
                           </div>
                           <div className={`mono ${styles.meta}`}>
                             <span>{layerLabel(e.source_layer)}</span>
                             <span>{fmtDateTime(e.applied_at ?? e.created_at)}</span>
-                            {e.superseded_by && <span>↳ 被第 {e.superseded_by} 条换掉</span>}
-                            {e.rejected_reason && <span>你没让记 · {e.rejected_reason}</span>}
+                            {e.superseded_by && <span>↳ 已为第 {e.superseded_by} 条取代</span>}
+                            {e.rejected_reason && <span>未采纳 · {e.rejected_reason}</span>}
                             <span className={styles.id}>#{e.id}</span>
                           </div>
                         </div>

@@ -44,25 +44,25 @@ function summaryLine(p: Person): string {
 
 export function PersonCard({ person, asOf, collapsed, onToggle, onEdit, onResolve }: Props) {
   if (!person) {
-    return <div className={styles.empty}>选一个人，看看小本替你记下的。</div>;
+    return <div className={styles.empty}>选择一位联系人，查看小本为你记录的内容。</div>;
   }
   const past = asOf != null;
   return (
     <div className={`${styles.card} ${past ? styles.cardPast : ""}`}>
       <div className={styles.topline}>
         <button className={styles.toggle} onClick={onToggle} aria-expanded={!collapsed}>
-          <span className="eyebrow">TA 现在的样子</span>
+          <span className="eyebrow">当前状态</span>
           <span className={`${styles.chev} ${collapsed ? styles.chevClosed : ""}`}>▾</span>
         </button>
         <div className={styles.toplineRight}>
           {past ? (
             <span className={`${styles.state} ${styles.statePast}`} title={asOf ?? undefined}>
-              翻回 {fmtDateTime(asOf)}
+              回溯至 {fmtDateTime(asOf)}
             </span>
           ) : (
             <span className={`${styles.state} ${styles.stateLive}`}>
               <i className={styles.liveDot} />
-              现在
+              当前
             </span>
           )}
           <button className={styles.editBtn} onClick={onEdit} title="编辑联系人">
@@ -81,7 +81,7 @@ export function PersonCard({ person, asOf, collapsed, onToggle, onEdit, onResolv
             exit={{ opacity: 0 }}
             transition={{ duration: 0.2 }}
           >
-            <span className={styles.sumName}>{person.full_name ?? "还没名字"}</span>
+            <span className={styles.sumName}>{person.full_name ?? "尚未命名"}</span>
             {summaryLine(person) && <span className={styles.sumRest}>{summaryLine(person)}</span>}
             {person.flags.length > 0 && (
               <span className={styles.sumFlag}>⚠ {person.flags.length}</span>
@@ -96,7 +96,7 @@ export function PersonCard({ person, asOf, collapsed, onToggle, onEdit, onResolv
             exit={{ opacity: 0, y: -6 }}
             transition={{ duration: 0.24, ease: [0.22, 1, 0.36, 1] }}
           >
-            <h1 className={`display ${styles.name}`}>{person.full_name ?? "还没名字"}</h1>
+            <h1 className={`display ${styles.name}`}>{person.full_name ?? "尚未命名"}</h1>
 
             <div className={styles.fields}>
               {FIELD_KEYS.map((key) => {
@@ -118,14 +118,14 @@ export function PersonCard({ person, asOf, collapsed, onToggle, onEdit, onResolv
                     <span className={styles.flagIcon}>⚠</span>
                     <span className={styles.flagText}>
                       <b>{fieldLabel(f.target_field)}</b>
-                      {f.flag_reason ? ` · ${f.flag_reason}` : " 这条小本拿不准"}
+                      {f.flag_reason ? ` · ${f.flag_reason}` : " 此项尚待核实"}
                     </span>
                     {f.intent_id != null && (
                       <button
                         className={styles.flagDismiss}
                         onClick={() => onResolve(f.intent_id as number, "reject")}
                       >
-                        知道了
+                        知悉
                       </button>
                     )}
                   </div>
@@ -136,7 +136,7 @@ export function PersonCard({ person, asOf, collapsed, onToggle, onEdit, onResolv
             <div className={styles.provenance}>
               <span className={styles.count}>
                 <i className={`${styles.cdot} ${styles.cFact}`} />
-                <b>{person.assertions.length}</b> 条记录
+                <b>{person.assertions.length}</b> 条事实
               </span>
               <span className={styles.count}>
                 <i className={`${styles.cdot} ${styles.cNote}`} />
@@ -144,10 +144,10 @@ export function PersonCard({ person, asOf, collapsed, onToggle, onEdit, onResolv
               </span>
               <span className={styles.count}>
                 <i className={`${styles.cdot} ${styles.cFlag}`} />
-                <b>{person.flags.length}</b> 处拿不准
+                <b>{person.flags.length}</b> 处待核实
               </span>
               <span className={styles.synth}>
-                从 {person.intents_applied_as_of.length} 条记录拼出来的
+                由 {person.intents_applied_as_of.length} 条记录合成
               </span>
             </div>
           </motion.div>

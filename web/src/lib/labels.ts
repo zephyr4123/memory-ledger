@@ -6,11 +6,11 @@ export const FIELD_LABEL: Record<string, string> = {
   full_name: "姓名",
   employer: "公司",
   role: "职位",
-  location: "在哪",
-  comm_pref: "怎么联系",
+  location: "所在地",
+  comm_pref: "联系方式",
   relationship: "关系",
   annotation: "备注",
-  flag_reason: "拿不准什么",
+  flag_reason: "待核实事项",
 };
 export const fieldLabel = (k?: string | null): string => (k && FIELD_LABEL[k]) || k || "—";
 
@@ -24,30 +24,30 @@ export const COMM_PREF_LABEL: Record<string, string> = {
 export const displayValue = (field: string | null | undefined, raw: string): string =>
   field === "comm_pref" ? (COMM_PREF_LABEL[raw] ?? raw) : raw;
 
-// 4-kind: 全说人话(小本到底做了啥)
+// 4-kind: 这条记录属于哪类动作
 export const KIND_LABEL: Record<Kind, string> = {
-  PATCH: "改一条",
-  ASSERT: "记一笔",
-  ANNOTATE: "随手记",
-  FLAG: "拿不准",
+  PATCH: "更改",
+  ASSERT: "记录",
+  ANNOTATE: "备注",
+  FLAG: "待核实",
 };
 
-// 状态: 这条记录现在算不算数
+// 状态: 这条记录当前是否生效
 export const STATUS_LABEL: Record<Status, string> = {
-  APPLIED: "在用",
-  PROPOSED: "等你点头",
-  SUPERSEDED: "被新的换掉了",
-  REJECTED: "你没让记",
-  EXPIRED: "过期了",
+  APPLIED: "生效中",
+  PROPOSED: "待确认",
+  SUPERSEDED: "已被更新",
+  REJECTED: "未采纳",
+  EXPIRED: "已过期",
 };
 
-// 来源: 这条信息怎么知道的
+// 来源: 这条信息的获取途径
 export const LAYER_LABEL: Record<SourceLayer, string> = {
-  USER_DIRECT: "你直接说的",
-  L2_FORM: "表单填的",
-  L2_CHAT: "聊天里说的",
-  L2_VOICE: "语音里说的",
-  AGENT_INFERENCE: "小本猜的",
+  USER_DIRECT: "本人录入",
+  L2_FORM: "表单录入",
+  L2_CHAT: "对话中提及",
+  L2_VOICE: "语音中提及",
+  AGENT_INFERENCE: "小本推断",
 };
 export const layerLabel = (l?: string | null): string =>
   (l && LAYER_LABEL[l as SourceLayer]) || l || "";
@@ -65,18 +65,18 @@ export function toolDisplay(
   switch (ev.name) {
     case "list_contacts": {
       const q = typeof a.query === "string" ? a.query.trim() : "";
-      return { icon: "📇", label: q ? `找「${q}」` : "翻名册" };
+      return { icon: "📇", label: q ? `检索「${q}」` : "浏览联系人" };
     }
     case "get_contact": {
       const id = Number(a.contact_id);
       const who = Number.isFinite(id) ? nameOf(id) : "联系人";
-      return { icon: "🔍", label: `查 ${who}${a.as_of ? " · 回看" : ""}` };
+      return { icon: "🔍", label: `查阅 ${who}${a.as_of ? " · 回溯" : ""}` };
     }
     case "review_open_items":
-      return { icon: "📋", label: "盘点待办" };
+      return { icon: "📋", label: "梳理待办事项" };
     case "record_memory_intents": {
       const n = Array.isArray(a.intents) ? a.intents.length : 0;
-      return { icon: "✎", label: n ? `记 ${n} 笔` : "记一笔" };
+      return { icon: "✎", label: n ? `记录 ${n} 项` : "记录" };
     }
     default:
       return { icon: "•", label: ev.name };

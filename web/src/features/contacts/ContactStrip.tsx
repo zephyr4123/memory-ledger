@@ -36,9 +36,9 @@ export function ContactStrip({ people, selectedId, onSelect, onAdd }: Props) {
           </button>
         );
       })}
-      <button className={styles.add} onClick={onAdd} title="加个联系人">
+      <button className={styles.add} onClick={onAdd} title="添加联系人">
         <span className={styles.addPlus}>＋</span>
-        <span className={styles.addLabel}>加人</span>
+        <span className={styles.addLabel}>添加</span>
       </button>
     </div>
   );

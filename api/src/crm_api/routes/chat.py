@@ -32,7 +32,7 @@ from ..tools import ToolContext
 router = APIRouter()
 
 _TITLE_MAX = 18
-_ERR_MSG = "小本这会儿出错了，刚才那句没记上，稍后再试一次～"
+_ERR_MSG = "小本暂时遇到了点状况，刚才那句未能记录，请稍后重试。"
 
 
 def _sse(event: str, data: dict[str, Any]) -> str:

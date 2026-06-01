@@ -272,7 +272,7 @@ export function useCrm() {
         patchAgent((msg) => ({
           ...msg,
           streaming: false,
-          text: msg.text || "(请求失败，请稍后重试)",
+          text: msg.text || "（请求失败，请稍后重试）",
         }));
       } finally {
         setStreaming(false);

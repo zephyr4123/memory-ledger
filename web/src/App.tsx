@@ -53,7 +53,7 @@ export default function App() {
             <span className={styles.wordmark}>
               念念手记<span className={styles.glyph}>✎</span>
             </span>
-            <span className={styles.tagline}>你说，小本替你记；要改之前先问你一句</span>
+            <span className={styles.tagline}>你讲述，小本为你记录；修改既有信息前，先经你确认</span>
           </div>
           <div className={`${styles.status} ${live ? styles.statusLive : ""}`}>
             <span className={styles.statusDot} />
@@ -99,7 +99,7 @@ export default function App() {
                 </div>
               )}
             </Panel>
-            <Panel label="记过的事" className={`${styles.fill} ${styles.ledgerPanel}`} bodyFlow>
+            <Panel label="变更记录" className={`${styles.fill} ${styles.ledgerPanel}`} bodyFlow>
               <LedgerTimeline events={crm.ledger} />
             </Panel>
           </motion.div>

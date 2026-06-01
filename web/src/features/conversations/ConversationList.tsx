@@ -56,7 +56,7 @@ export function ConversationList({
     <div className={styles.wrap}>
       <button className={styles.new} onClick={onNew}>
         <span className={styles.newPlus}>＋</span>
-        开个新话题
+        新建对话
       </button>
 
       <nav className={styles.list}>
@@ -86,7 +86,7 @@ export function ConversationList({
                   />
                 ) : (
                   <button className={styles.body} onClick={() => onSelect(c.id)}>
-                    <span className={styles.title}>{c.title || "新对话"}</span>
+                    <span className={styles.title}>{c.title || "未命名对话"}</span>
                     <span className={styles.meta}>
                       {relTime(c.updated_at)}
                       {c.message_count > 0 && ` · ${c.message_count} 条`}
@@ -98,7 +98,7 @@ export function ConversationList({
                   <span className={styles.actions}>
                     <button
                       className={styles.iconBtn}
-                      title="改名"
+                      title="重命名"
                       onClick={() => startEdit(c)}
                     >
                       ✎
@@ -116,10 +116,10 @@ export function ConversationList({
                 {confirming && (
                   <span className={styles.confirm}>
                     <button className={styles.del} onClick={() => onDelete(c.id)}>
-                      删
+                      删除
                     </button>
                     <button className={styles.keep} onClick={() => setConfirmId(null)}>
-                      留
+                      取消
                     </button>
                   </span>
                 )}
@@ -128,7 +128,7 @@ export function ConversationList({
           })}
         </AnimatePresence>
 
-        {conversations.length === 0 && <div className={styles.empty}>还没有对话</div>}
+        {conversations.length === 0 && <div className={styles.empty}>暂无对话</div>}
       </nav>
     </div>
   );

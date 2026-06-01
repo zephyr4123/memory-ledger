@@ -14,8 +14,9 @@ from memory_ledger import Response
 from ..tools import ToolContext
 
 _NOTICE = (
-    "(离线模式: 未配置 LLM_API_KEY, 小本暂时只能看、不能记。"
-    "配置 key 后即为真 LLM 对话, 小本会自己查记忆、实时回复, 并把改动停在确认闸门等你点头。)"
+    "（离线模式：尚未配置 LLM_API_KEY，小本暂时只能查看、无法记录。"
+    "配置后即为真实大模型对话，小本将自行检索记忆、实时应答，"
+    "并将涉及修改的内容停在确认环节，待你确认。）"
 )
 
 

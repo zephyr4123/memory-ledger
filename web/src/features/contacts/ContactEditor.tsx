@@ -14,11 +14,11 @@ interface Props {
 }
 
 const TEXT_FIELDS: { key: keyof PersonInput; label: string; ph: string }[] = [
-  { key: "full_name", label: "姓名", ph: "TA 叫什么" },
-  { key: "employer", label: "公司", ph: "在哪上班" },
-  { key: "role", label: "职位", ph: "做什么的" },
-  { key: "location", label: "在哪", ph: "在哪个城市" },
-  { key: "relationship", label: "关系", ph: "你们怎么认识的" },
+  { key: "full_name", label: "姓名", ph: "如何称呼" },
+  { key: "employer", label: "公司", ph: "所属公司或机构" },
+  { key: "role", label: "职位", ph: "担任的职务" },
+  { key: "location", label: "所在地", ph: "所在城市" },
+  { key: "relationship", label: "关系", ph: "与你的关系或相识缘由" },
 ];
 const ALL_KEYS = [
   "full_name", "employer", "role", "location", "comm_pref", "relationship",
@@ -84,7 +84,7 @@ export function ContactEditor({ mode, person, onClose, onSubmit, onDelete }: Pro
       >
         <div className={styles.head}>
           <span className={`display ${styles.title}`}>
-            {mode === "create" ? "加个联系人" : "编辑联系人"}
+            {mode === "create" ? "添加联系人" : "编辑联系人"}
           </span>
           <button className={styles.close} onClick={onClose} aria-label="关闭">
             ✕
@@ -105,7 +105,7 @@ export function ContactEditor({ mode, person, onClose, onSubmit, onDelete }: Pro
             </label>
           ))}
           <label className={styles.field}>
-            <span className={styles.label}>怎么联系</span>
+            <span className={styles.label}>联系方式</span>
             <select
               className={styles.input}
               value={form.comm_pref}
@@ -113,14 +113,14 @@ export function ContactEditor({ mode, person, onClose, onSubmit, onDelete }: Pro
             >
               {COMM_OPTS.map((o) => (
                 <option key={o} value={o}>
-                  {o === "" ? "—（不设）" : COMM_PREF_LABEL[o]}
+                  {o === "" ? "—（未设置）" : COMM_PREF_LABEL[o]}
                 </option>
               ))}
             </select>
           </label>
 
           {mode === "edit" && (
-            <p className={styles.hint}>改动会作为「你直接改的」记进账本、立刻生效。</p>
+            <p className={styles.hint}>此次编辑将以「本人录入」记入账本，并即时生效。</p>
           )}
 
           <div className={styles.actions}>
@@ -128,16 +128,16 @@ export function ContactEditor({ mode, person, onClose, onSubmit, onDelete }: Pro
               onDelete &&
               (confirmDel ? (
                 <span className={styles.delConfirm}>
-                  <span className={styles.delAsk}>删掉这人 + TA 全部记忆？</span>
+                  <span className={styles.delAsk}>删除该联系人及其全部记忆？</span>
                   <button type="button" className={styles.delYes} onClick={doDelete} disabled={busy}>
-                    删
+                    删除
                   </button>
                   <button
                     type="button"
                     className={styles.delNo}
                     onClick={() => setConfirmDel(false)}
                   >
-                    留着
+                    取消
                   </button>
                 </span>
               ) : (

@@ -34,7 +34,7 @@ function GateBanner({ banner, onResolve }: { banner: Banner; onResolve: Props["o
     >
       <div className={styles.gateHead}>
         <span className={styles.gateGlyph}>✎</span>
-        <span className={styles.gateLabel}>这条要改，先问问你</span>
+        <span className={styles.gateLabel}>此项更改需经你确认</span>
         <span className={styles.gateConf}>{Math.round(banner.confidence * 100)}%</span>
       </div>
       <div className={styles.gateBody}>
@@ -46,10 +46,10 @@ function GateBanner({ banner, onResolve }: { banner: Banner; onResolve: Props["o
       </div>
       <div className={styles.gateActions}>
         <button className={styles.reject} onClick={() => onResolve(banner.intent_id, "reject")}>
-          不改
+          暂不
         </button>
         <button className={styles.confirm} onClick={() => onResolve(banner.intent_id, "confirm")}>
-          改吧
+          确认更改
         </button>
       </div>
     </motion.div>
@@ -69,7 +69,7 @@ function AgentBubble({ m, nameOf }: { m: ChatMessage; nameOf: Props["nameOf"] })
             {m.streaming && <span className={styles.caret} />}
           </>
         ) : m.streaming ? (
-          <Thinking label={busy ? "小本正在翻记忆" : "小本正在想"} />
+          <Thinking label={busy ? "正在检索记忆" : "正在思考"} />
         ) : null}
       </div>
     </>
@@ -135,13 +135,12 @@ export function ChatPanel({
       <div className={styles.scroll} ref={scrollRef}>
         {messages.length === 0 && (
           <div className={styles.placeholder}>
-            <p className={`display ${styles.phTitle}`}>随口说一句，小本替你记一笔</p>
+            <p className={`display ${styles.phTitle}`}>讲述近况，小本为你逐一记录</p>
             <p className={styles.phBody}>
-              “她升产品总监了” · “搬去深圳了” · “以后发短信就行”
+              “她升任产品总监” · “已搬至深圳” · “今后以短信联系”
             </p>
             <p className={styles.phNote}>
-              小本一边跟你搭话，一边自己翻本子查、把变化记下来;
-              要改你写过的事，它会先停下来问你一句，你点头才改。
+              小本在对话间自行检索、记录变化；凡涉及修改既有信息，必先征得你的确认。
             </p>
           </div>
         )}
@@ -177,7 +176,7 @@ export function ChatPanel({
             ref={taRef}
             className={styles.input}
             rows={1}
-            placeholder={canSend ? "跟小本说一句…" : "正在准备…"}
+            placeholder={canSend ? "向小本讲述…" : "正在准备…"}
             value={draft}
             disabled={!canSend || streaming}
             onChange={(e) => setDraft(e.target.value)}

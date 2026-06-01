@@ -29,9 +29,9 @@ export function TimeScrubber({ ledger, asOf, onTravel }: Props) {
   return (
     <div className={styles.wrap}>
       <div className={styles.head}>
-        <span className="eyebrow">翻回那天</span>
+        <span className="eyebrow">历史回溯</span>
         <span className={`${styles.readout} ${asOf ? styles.past : styles.now}`}>
-          {asOf == null ? "● 现在" : fmtDateTime(asOf)}
+          {asOf == null ? "● 当前" : fmtDateTime(asOf)}
         </span>
       </div>
 
@@ -94,8 +94,8 @@ export function TimeScrubber({ ledger, asOf, onTravel }: Props) {
 
       <div className={styles.hint}>
         {n
-          ? "拖一拖，看看 TA 那时候是什么样"
-          : "还没有记录 —— 跟小本说点什么就有了"}
+          ? "拖动时间轴，回看任一时点的状态"
+          : "暂无记录 —— 与小本交谈即可生成"}
       </div>
     </div>
   );
