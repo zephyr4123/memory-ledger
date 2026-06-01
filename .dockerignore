@@ -1,0 +1,46 @@
+# 构建上下文裁剪 —— 越小 build 越快, 镜像越干净.
+# 保留 (构建/运行所需): pyproject.toml, README.md, LICENSE, NOTICE, src/, examples/
+
+# VCS / agent 本地状态
+.git
+.gitignore
+.claude
+
+# Python 缓存 / 构建产物
+__pycache__/
+*.py[cod]
+*.egg-info/
+*.egg
+build/
+dist/
+.eggs/
+
+# 工具缓存
+.mypy_cache/
+.ruff_cache/
+.pytest_cache/
+.coverage
+coverage.xml
+htmlcov/
+
+# 虚拟环境
+.venv/
+venv/
+env/
+
+# 镜像里用不到
+docs/
+tests/
+conftest.py
+examples/personal_crm/tests/
+
+# Docker 元数据自身 (不进上下文 COPY)
+Dockerfile
+docker-compose.yml
+.dockerignore
+
+# OS / 编辑器
+.DS_Store
+*.swp
+.idea/
+.vscode/

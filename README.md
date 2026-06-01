@@ -55,6 +55,21 @@
                                        (下一轮 LLM 看到)
 ```
 
+## 跑起来看(Docker,一行)
+
+装了 Docker 就够,不用 Python / conda / Postgres:
+
+```bash
+docker compose up        # 起 Postgres → 自动建表 → 跑 Personal-CRM demo → 打印对话
+docker compose down -v   # 用完清掉 (含数据卷)
+```
+
+你会在日志里看到一段脚本化对话,把三大差异化演出来:**高危字段改动先挂"待确认 banner"等你拍板**、**employer 随时间 Acme→Globex 的 as-of 时光机**、**被拒绝的改动零副作用**。全程离线、确定性、零 API key(`MockExtractor` 是冻结脚本)。
+
+编排细节见根目录 `docker-compose.yml`:`db`(Postgres,开发档调优)+ `app`(demo),并预留了将来 Web UI 的 `api` / `web` 服务槽。想连库自己玩:`postgresql://memory_ledger:memory_ledger@localhost:5433/memory_ledger`。
+
+> 想跑那 103 个测试,仍走本地 `pytest`(用 testcontainers 自起一次性 PG),见下方"5 分钟上手"。
+
 ## 5 分钟上手
 
 按这个顺序读 + 改:

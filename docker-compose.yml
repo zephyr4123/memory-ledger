@@ -1,0 +1,73 @@
+# memory-ledger —— 本地一键编排.
+#
+# 一行体验:   docker compose up
+#   → 起 Postgres → 健康检查通过 → app 自动 apply 迁移链 + 跑 Personal-CRM demo
+#     + 把对话/待确认 banner 打到日志 → app 退出 (db 继续在)
+# 重置数据:   docker compose down -v
+name: memory-ledger
+
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: memory_ledger
+      POSTGRES_PASSWORD: memory_ledger
+      POSTGRES_DB: memory_ledger
+    # ⚠️ 开发/demo 档调优: 这是一次性演示库, 不是生产数据.
+    #    关闭 fsync / synchronous_commit / full_page_writes 换数倍写入吞吐.
+    #    断电/崩溃可能损坏数据 —— 严禁用于任何真实/生产数据.
+    command:
+      - postgres
+      - -c
+      - fsync=off
+      - -c
+      - synchronous_commit=off
+      - -c
+      - full_page_writes=off
+      - -c
+      - shared_buffers=256MB
+      - -c
+      - max_connections=50
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    # 映射到宿主 5433 (避开本机可能占用的 5432). 外部工具连:
+    #   postgresql://memory_ledger:memory_ledger@localhost:5433/memory_ledger
+    ports:
+      - "5433:5432"
+    healthcheck:
+      # 等 db 真正可接受连接, 而非靠 sleep 猜时机.
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 2s
+      timeout: 3s
+      retries: 15
+      start_period: 5s
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: memory-ledger:local
+    depends_on:
+      db:
+        condition: service_healthy   # db 健康才起, 杜绝竞态
+    environment:
+      DATABASE_URL: postgresql://memory_ledger:memory_ledger@db:5432/memory_ledger
+    # 默认 CMD = 跑 demo (见 Dockerfile). 其它入口按需:
+    #   docker compose run --rm app memory-ledger init-db "$DATABASE_URL"
+    #   docker compose run --rm app python -m examples.personal_crm.run_demo
+    #   docker compose run --rm app bash
+
+  # ── 未来 Web UI 的编排槽 (现在不写占位代码, 只占位置, 来了直接填) ──────────
+  # api:                       # FastAPI/Flask 后端, 复用同一个 db
+  #   build: { context: ., dockerfile: docker/api.Dockerfile }
+  #   depends_on: { db: { condition: service_healthy } }
+  #   environment:
+  #     DATABASE_URL: postgresql://memory_ledger:memory_ledger@db:5432/memory_ledger
+  #   ports: ["8000:8000"]
+  # web:                       # 前端 (Vite/Next 等), 走 api
+  #   build: { context: ./web }
+  #   depends_on: [api]
+  #   ports: ["3000:3000"]
+
+volumes:
+  pgdata:
