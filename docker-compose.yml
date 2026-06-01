@@ -3,7 +3,7 @@
 #   docker compose up --build         起 db + api + web; 浏览器开 http://localhost:8080
 #   docker compose down -v            停并清数据卷
 #
-# 真 LLM 对话需要 ANTHROPIC_API_KEY (放进 .env, 见 .env.example);
+# 真 LLM 对话需要 LLM_API_KEY (+ 可选 LLM_MODEL/LLM_BASE_URL, 放进 .env, 见 .env.example);
 # 不配则 api 以 mock 模式运行 —— 全栈仍可起、可看 seed 数据/时光机/溯源, 仅对话非真智能。
 name: memory-ledger
 
@@ -49,8 +49,10 @@ services:
         condition: service_healthy # db 健康才起, 杜绝竞态
     environment:
       DATABASE_URL: postgresql://memory_ledger:memory_ledger@db:5432/memory_ledger
-      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-} # 空=mock 模式
-      MEMORY_LEDGER_MODEL: ${MEMORY_LEDGER_MODEL:-claude-sonnet-4-6}
+      # LiteLLM 统一接入: 改这三个 env 即可换任意模型 (见 .env.example)
+      LLM_MODEL: ${LLM_MODEL:-deepseek/deepseek-v4-pro}
+      LLM_API_KEY: ${LLM_API_KEY:-} # 空=mock 模式
+      LLM_BASE_URL: ${LLM_BASE_URL:-}
     ports:
       - "${API_PORT:-8000}:8000" # 宿主端口被占时用 .env 的 API_PORT 覆盖
     healthcheck:
