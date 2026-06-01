@@ -1,12 +1,16 @@
-import { motion, MotionConfig } from "framer-motion";
+import { AnimatePresence, motion, MotionConfig } from "framer-motion";
+import { useState } from "react";
 
 import styles from "./App.module.css";
 import { ChatPanel } from "./features/chat/ChatPanel";
-import { ContactList } from "./features/contacts/ContactList";
+import { ContactEditor } from "./features/contacts/ContactEditor";
+import { ContactStrip } from "./features/contacts/ContactStrip";
+import { ConversationList } from "./features/conversations/ConversationList";
 import { LedgerTimeline } from "./features/ledger/LedgerTimeline";
 import { PersonCard } from "./features/person/PersonCard";
 import { TimeScrubber } from "./features/timetravel/TimeScrubber";
 import { useCrm } from "./hooks/useCrm";
+import type { PersonInput } from "./lib/types";
 import { Panel } from "./ui/Panel";
 
 const enter = (delay: number) => ({
@@ -18,6 +22,22 @@ const enter = (delay: number) => ({
 export default function App() {
   const crm = useCrm();
   const live = crm.health?.llm === "live";
+  const nameOf = (id: number) => crm.people.find((p) => p.id === id)?.full_name ?? "联系人";
+
+  const [editor, setEditor] = useState<null | { mode: "create" | "edit" }>(null);
+
+  const submitContact = async (data: PersonInput) => {
+    if (editor?.mode === "edit" && crm.selectedId != null) {
+      await crm.updateContact(crm.selectedId, data);
+    } else {
+      await crm.createContact(data);
+    }
+    setEditor(null);
+  };
+  const removeContact = async () => {
+    if (crm.selectedId != null) await crm.deleteContact(crm.selectedId);
+    setEditor(null);
+  };
 
   return (
     <MotionConfig reducedMotion="user">
@@ -42,18 +62,34 @@ export default function App() {
 
         <main className={styles.grid}>
           <motion.div className={styles.col} {...enter(0.05)}>
-            <Panel label="联系人" className={styles.fill}>
-              <ContactList
-                people={crm.people}
-                selectedId={crm.selectedId}
-                onSelect={crm.setSelectedId}
+            <Panel label="对话" className={styles.fill}>
+              <ConversationList
+                conversations={crm.conversations}
+                activeId={crm.activeConvId}
+                onSelect={crm.selectConversation}
+                onNew={crm.newConversation}
+                onRename={crm.renameConversation}
+                onDelete={crm.deleteConversation}
               />
             </Panel>
           </motion.div>
 
           <motion.div className={styles.colCenter} {...enter(0.12)}>
+            <div className={styles.strip}>
+              <ContactStrip
+                people={crm.people}
+                selectedId={crm.selectedId}
+                onSelect={crm.setSelectedId}
+                onAdd={() => setEditor({ mode: "create" })}
+              />
+            </div>
             <Panel flush className={styles.truth}>
-              <PersonCard person={crm.person} asOf={crm.asOf} />
+              <PersonCard
+                person={crm.person}
+                asOf={crm.asOf}
+                onEdit={() => setEditor({ mode: "edit" })}
+                onResolve={crm.resolveBanner}
+              />
               <div className={styles.scrubber}>
                 <TimeScrubber ledger={crm.ledger} asOf={crm.asOf} onTravel={crm.travelTo} />
               </div>
@@ -70,13 +106,26 @@ export default function App() {
               streaming={crm.streaming}
               llm={crm.health?.llm ?? null}
               model={crm.health?.model ?? null}
-              hasContact={crm.selectedId != null}
+              canSend={crm.activeConvId != null}
+              nameOf={nameOf}
               onSend={crm.sendTurn}
               onResolve={crm.resolveBanner}
             />
           </motion.div>
         </main>
       </div>
+
+      <AnimatePresence>
+        {editor && (
+          <ContactEditor
+            mode={editor.mode}
+            person={editor.mode === "edit" ? crm.person : null}
+            onClose={() => setEditor(null)}
+            onSubmit={submitContact}
+            onDelete={editor.mode === "edit" ? removeContact : undefined}
+          />
+        )}
+      </AnimatePresence>
     </MotionConfig>
   );
 }

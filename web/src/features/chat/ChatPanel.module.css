@@ -133,6 +133,7 @@
   background: var(--surface-bright);
   border: 1px solid var(--line);
   color: var(--ink);
+  white-space: normal; /* Markdown 自己管排版, 不要 pre-wrap 把块级间距撑开 */
 }
 
 .caret {

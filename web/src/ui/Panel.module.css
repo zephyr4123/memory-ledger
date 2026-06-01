@@ -19,6 +19,7 @@
 }
 
 .body {
+  flex: 1;
   padding: var(--pad);
   overflow: auto;
   min-height: 0;

@@ -17,6 +17,30 @@
   justify-content: space-between;
   gap: 12px;
 }
+.toplineRight {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.editBtn {
+  width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  font-size: 13px;
+  color: var(--ink-faint);
+  border-radius: var(--r-sm);
+  border: 1px solid var(--line);
+  transition:
+    color var(--dur-fast) var(--ease),
+    background var(--dur-fast) var(--ease),
+    border-color var(--dur-fast) var(--ease);
+}
+.editBtn:hover {
+  color: var(--sage-ink);
+  background: var(--sage-soft);
+  border-color: var(--sage-line);
+}
 
 /* 状态徽章 —— 现在: sage 实柔块; 过去: clay 轮廓 */
 .state {
@@ -126,6 +150,57 @@
   margin-left: auto;
   font-size: 12px;
   color: var(--ink-faint);
+}
+
+/* 拿不准清单 —— clay 轮廓(非实心, 实心只属闸门), 每条带"知道了"消除 */
+.flagList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.flagItem {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 12px;
+  border: 1px solid var(--clay-line);
+  border-radius: var(--r-md);
+  background: var(--clay-soft);
+}
+.flagIcon {
+  flex: none;
+  font-size: 13px;
+  color: var(--clay-ink);
+}
+.flagText {
+  flex: 1;
+  min-width: 0;
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--ink-dim);
+  overflow-wrap: anywhere;
+}
+.flagText b {
+  color: var(--clay-ink);
+  font-weight: 600;
+}
+.flagDismiss {
+  flex: none;
+  padding: 5px 12px;
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--clay-ink);
+  border: 1px solid var(--clay-line);
+  border-radius: var(--r-sm);
+  transition:
+    background var(--dur-fast) var(--ease),
+    transform var(--dur-fast) var(--ease);
+}
+.flagDismiss:hover {
+  background: rgba(201, 138, 60, 0.16);
+}
+.flagDismiss:active {
+  transform: scale(0.96);
 }
 
 .empty {

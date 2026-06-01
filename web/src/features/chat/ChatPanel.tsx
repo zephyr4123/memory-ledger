@@ -5,6 +5,9 @@ import type { ChatMessage } from "../../hooks/useCrm";
 import { valueToText } from "../../lib/format";
 import { displayValue, fieldLabel } from "../../lib/labels";
 import type { Banner } from "../../lib/types";
+import { Markdown } from "./Markdown";
+import { Thinking } from "./Thinking";
+import { ToolStrip } from "./ToolStrip";
 import styles from "./ChatPanel.module.css";
 
 interface Props {
@@ -13,7 +16,8 @@ interface Props {
   streaming: boolean;
   llm: "live" | "mock" | null;
   model: string | null;
-  hasContact: boolean;
+  canSend: boolean;
+  nameOf: (id: number) => string;
   onSend: (text: string) => void;
   onResolve: (intentId: number, action: "confirm" | "reject") => void;
 }
@@ -52,13 +56,34 @@ function GateBanner({ banner, onResolve }: { banner: Banner; onResolve: Props["o
   );
 }
 
+function AgentBubble({ m, nameOf }: { m: ChatMessage; nameOf: Props["nameOf"] }) {
+  const tools = m.tools ?? [];
+  const busy = tools.some((t) => t.status === "running");
+  return (
+    <>
+      {tools.length > 0 && <ToolStrip tools={tools} nameOf={nameOf} />}
+      <div className={styles.bubble}>
+        {m.text ? (
+          <>
+            <Markdown text={m.text} />
+            {m.streaming && <span className={styles.caret} />}
+          </>
+        ) : m.streaming ? (
+          <Thinking label={busy ? "小本正在翻记忆" : "小本正在想"} />
+        ) : null}
+      </div>
+    </>
+  );
+}
+
 export function ChatPanel({
   messages,
   banners,
   streaming,
   llm,
   model,
-  hasContact,
+  canSend,
+  nameOf,
   onSend,
   onResolve,
 }: Props) {
@@ -81,7 +106,7 @@ export function ChatPanel({
 
   const submit = () => {
     const t = draft.trim();
-    if (!t || streaming || !hasContact) return;
+    if (!t || streaming || !canSend) return;
     onSend(t);
     setDraft("");
   };
@@ -115,7 +140,7 @@ export function ChatPanel({
               “她升产品总监了” · “搬去深圳了” · “以后发短信就行”
             </p>
             <p className={styles.phNote}>
-              小本一边跟你搭话，一边把这些变化记进本子;
+              小本一边跟你搭话，一边自己翻本子查、把变化记下来;
               要改你写过的事，它会先停下来问你一句，你点头才改。
             </p>
           </div>
@@ -129,10 +154,11 @@ export function ChatPanel({
             transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
           >
             <span className={styles.roleTag}>{m.role === "user" ? "你" : "小本"}</span>
-            <div className={styles.bubble}>
-              {m.text}
-              {m.streaming && <span className={styles.caret} />}
-            </div>
+            {m.role === "agent" ? (
+              <AgentBubble m={m} nameOf={nameOf} />
+            ) : (
+              <div className={styles.bubble}>{m.text}</div>
+            )}
           </motion.div>
         ))}
       </div>
@@ -151,16 +177,16 @@ export function ChatPanel({
             ref={taRef}
             className={styles.input}
             rows={1}
-            placeholder={hasContact ? "跟小本说一句…" : "先选一个人"}
+            placeholder={canSend ? "跟小本说一句…" : "正在准备…"}
             value={draft}
-            disabled={!hasContact || streaming}
+            disabled={!canSend || streaming}
             onChange={(e) => setDraft(e.target.value)}
             onKeyDown={onKey}
           />
           <button
             className={styles.send}
             type="submit"
-            disabled={!draft.trim() || streaming || !hasContact}
+            disabled={!draft.trim() || streaming || !canSend}
             aria-label="发送"
           >
             {streaming ? <span className={styles.sending} /> : "↑"}

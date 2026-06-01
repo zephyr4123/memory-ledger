@@ -63,8 +63,13 @@
   flex: 1;
   min-height: 0;
   display: grid;
-  grid-template-columns: 264px minmax(0, 1fr) 408px;
+  grid-template-columns: 240px minmax(0, 1fr) 408px;
   gap: var(--gap);
+}
+
+/* 焦点联系人头像条 (中间栏顶) */
+.strip {
+  flex: none;
 }
 
 .col {

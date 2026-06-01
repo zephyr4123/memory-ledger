@@ -1,0 +1,71 @@
+.strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 7px;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 9px 4px 8px;
+  border-radius: var(--r-pill);
+  font-size: 12px;
+  font-weight: 500;
+  background: var(--surface-bright);
+  border: 1px solid var(--line);
+  color: var(--ink-dim);
+}
+.icon {
+  font-size: 11px;
+  line-height: 1;
+}
+.label {
+  white-space: nowrap;
+}
+.tick {
+  display: grid;
+  place-items: center;
+  width: 13px;
+  height: 13px;
+  font-size: 10px;
+  line-height: 1;
+}
+
+/* 进行中: sage 边 + 旋转环 */
+.running {
+  border-color: var(--sage-line);
+  color: var(--sage-ink);
+}
+.spin {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  border: 1.5px solid var(--sage-line);
+  border-top-color: var(--sage);
+  animation: toolspin 0.7s linear infinite;
+}
+@keyframes toolspin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* 完成: 鼠尾草定心 ✓ */
+.done {
+  border-color: var(--sage-line);
+  color: var(--sage-ink);
+}
+.done .tick {
+  color: var(--sage);
+}
+
+/* 出错: 红 ✕ */
+.error {
+  border-color: var(--danger-soft);
+  color: var(--danger-ink);
+}
+.error .tick {
+  color: var(--danger);
+}

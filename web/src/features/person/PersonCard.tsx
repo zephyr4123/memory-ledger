@@ -1,11 +1,18 @@
 import { AnimatePresence, motion } from "framer-motion";
 
 import { fmtDateTime } from "../../lib/format";
-import { displayValue, FIELD_LABEL } from "../../lib/labels";
+import { displayValue, FIELD_LABEL, fieldLabel } from "../../lib/labels";
 import type { Person } from "../../lib/types";
 import styles from "./PersonCard.module.css";
 
 const FIELD_KEYS: (keyof Person)[] = ["employer", "role", "location", "comm_pref", "relationship"];
+
+interface Props {
+  person: Person | null;
+  asOf: string | null;
+  onEdit: () => void;
+  onResolve: (intentId: number, action: "confirm" | "reject") => void;
+}
 
 function Field({ label, value }: { label: string; value: string | null }) {
   return (
@@ -27,7 +34,7 @@ function Field({ label, value }: { label: string; value: string | null }) {
   );
 }
 
-export function PersonCard({ person, asOf }: { person: Person | null; asOf: string | null }) {
+export function PersonCard({ person, asOf, onEdit, onResolve }: Props) {
   if (!person) {
     return <div className={styles.empty}>选一个人，看看小本替你记下的。</div>;
   }
@@ -36,16 +43,21 @@ export function PersonCard({ person, asOf }: { person: Person | null; asOf: stri
     <div className={`${styles.card} ${past ? styles.cardPast : ""}`}>
       <div className={styles.topline}>
         <span className="eyebrow">TA 现在的样子</span>
-        {past ? (
-          <span className={`${styles.state} ${styles.statePast}`} title={asOf ?? undefined}>
-            翻回 {fmtDateTime(asOf)}
-          </span>
-        ) : (
-          <span className={`${styles.state} ${styles.stateLive}`}>
-            <i className={styles.liveDot} />
-            现在
-          </span>
-        )}
+        <div className={styles.toplineRight}>
+          {past ? (
+            <span className={`${styles.state} ${styles.statePast}`} title={asOf ?? undefined}>
+              翻回 {fmtDateTime(asOf)}
+            </span>
+          ) : (
+            <span className={`${styles.state} ${styles.stateLive}`}>
+              <i className={styles.liveDot} />
+              现在
+            </span>
+          )}
+          <button className={styles.editBtn} onClick={onEdit} title="编辑联系人">
+            ✎
+          </button>
+        </div>
       </div>
 
       <h1 className={`display ${styles.name}`}>{person.full_name ?? "还没名字"}</h1>
@@ -62,6 +74,29 @@ export function PersonCard({ person, asOf }: { person: Person | null; asOf: stri
           );
         })}
       </div>
+
+      {/* 拿不准的标记 —— 每条给一个"知道了"消除入口 (回看过去时不显示动作) */}
+      {!past && person.flags.length > 0 && (
+        <div className={styles.flagList}>
+          {person.flags.map((f, i) => (
+            <div key={f.intent_id ?? i} className={styles.flagItem}>
+              <span className={styles.flagIcon}>⚠</span>
+              <span className={styles.flagText}>
+                <b>{fieldLabel(f.target_field)}</b>
+                {f.flag_reason ? ` · ${f.flag_reason}` : " 这条小本拿不准"}
+              </span>
+              {f.intent_id != null && (
+                <button
+                  className={styles.flagDismiss}
+                  onClick={() => onResolve(f.intent_id as number, "reject")}
+                >
+                  知道了
+                </button>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
 
       <div className={styles.provenance}>
         <span className={styles.count}>

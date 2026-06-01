@@ -1,0 +1,177 @@
+.wrap {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  gap: 12px;
+}
+
+/* 新话题: 柔描边胶囊, hover 染上鼠尾草 */
+.new {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 11px 14px;
+  font-size: 13.5px;
+  font-weight: 500;
+  color: var(--sage-ink);
+  background: var(--sage-soft);
+  border: 1px solid var(--sage-line);
+  border-radius: var(--r-md);
+  transition:
+    background var(--dur-fast) var(--ease),
+    transform var(--dur-fast) var(--ease);
+}
+.new:hover {
+  background: rgba(111, 143, 106, 0.18);
+  transform: translateY(-1px);
+}
+.new:active {
+  transform: scale(0.98);
+}
+.newPlus {
+  font-size: 15px;
+  line-height: 1;
+}
+
+.list {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  margin: 0 -6px;
+  padding: 0 6px;
+}
+
+.item {
+  position: relative;
+  display: flex;
+  align-items: center;
+  border-radius: var(--r-md);
+  overflow: hidden;
+  transition: background var(--dur-fast) var(--ease);
+}
+.item:hover {
+  background: var(--surface-bright);
+}
+.active {
+  background: var(--sage-soft);
+}
+.active::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 18%;
+  bottom: 18%;
+  width: 3px;
+  border-radius: 0 2px 2px 0;
+  background: var(--sage);
+}
+
+.body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  text-align: left;
+  padding: 10px 12px;
+}
+.title {
+  font-size: 13.5px;
+  font-weight: 500;
+  color: var(--ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.active .title {
+  color: var(--sage-ink);
+  font-weight: 600;
+}
+.meta {
+  font-size: 11px;
+  color: var(--ink-faint);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.edit {
+  flex: 1;
+  min-width: 0;
+  margin: 6px 10px;
+  padding: 5px 8px;
+  font-size: 13.5px;
+  color: var(--ink);
+  background: var(--surface-bright);
+  border: 1px solid var(--sage-line);
+  border-radius: var(--r-sm);
+  outline: none;
+}
+
+/* 行内动作: 默认隐, hover 行才浮现 */
+.actions {
+  display: flex;
+  gap: 2px;
+  padding-right: 8px;
+  opacity: 0;
+  transition: opacity var(--dur-fast) var(--ease);
+}
+.item:hover .actions {
+  opacity: 1;
+}
+.iconBtn {
+  width: 24px;
+  height: 24px;
+  display: grid;
+  place-items: center;
+  font-size: 12px;
+  color: var(--ink-faint);
+  border-radius: var(--r-sm);
+  transition:
+    color var(--dur-fast) var(--ease),
+    background var(--dur-fast) var(--ease);
+}
+.iconBtn:hover {
+  color: var(--ink);
+  background: var(--surface-sunk);
+}
+
+.confirm {
+  display: flex;
+  gap: 4px;
+  padding-right: 8px;
+}
+.del,
+.keep {
+  padding: 4px 9px;
+  font-size: 12px;
+  font-weight: 600;
+  border-radius: var(--r-sm);
+}
+.del {
+  color: #fff;
+  background: var(--danger);
+}
+.del:hover {
+  background: var(--danger-ink);
+}
+.keep {
+  color: var(--ink-dim);
+  background: var(--surface-sunk);
+}
+.keep:hover {
+  color: var(--ink);
+}
+
+.empty {
+  padding: 24px 8px;
+  text-align: center;
+  font-size: 12.5px;
+  color: var(--ink-faint);
+}

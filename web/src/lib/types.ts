@@ -80,4 +80,43 @@ export interface TurnDone {
   banners: Banner[];
   person: Person | null;
   ledger: LedgerEvent[];
+  error?: string;
+}
+
+// 一次工具调用的回执 (流式可视化 + 落盘回看)。
+export type ToolStatus = "running" | "done" | "error";
+export interface ToolEvent {
+  id: string;
+  name: string;
+  args?: Record<string, unknown>;
+  ok?: boolean;
+  status: ToolStatus;
+}
+
+// 对话线程 (聊天容器)。记忆本体按 user 全局共享, 不随线程走。
+export interface Conversation {
+  id: number;
+  title: string;
+  focus_person_id: number | null;
+  created_at: string;
+  updated_at: string;
+  message_count: number;
+}
+
+export interface ConvMessage {
+  id: number;
+  role: "user" | "agent";
+  content: string;
+  tools: ToolEvent[];
+  created_at: string;
+}
+
+// 新建/编辑联系人的入参 (full_name 在新建时必填)。
+export interface PersonInput {
+  full_name?: string;
+  employer?: string;
+  role?: string;
+  location?: string;
+  comm_pref?: string;
+  relationship?: string;
 }

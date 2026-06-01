@@ -51,3 +51,34 @@ export const LAYER_LABEL: Record<SourceLayer, string> = {
 };
 export const layerLabel = (l?: string | null): string =>
   (l && LAYER_LABEL[l as SourceLayer]) || l || "";
+
+// 工具调用 → 图标 + 人话动作 (让用户看见小本"真在查/真在记")。
+export interface ToolDisplay {
+  icon: string;
+  label: string;
+}
+export function toolDisplay(
+  ev: { name: string; args?: Record<string, unknown> },
+  nameOf: (id: number) => string,
+): ToolDisplay {
+  const a = ev.args ?? {};
+  switch (ev.name) {
+    case "list_contacts": {
+      const q = typeof a.query === "string" ? a.query.trim() : "";
+      return { icon: "📇", label: q ? `找「${q}」` : "翻名册" };
+    }
+    case "get_contact": {
+      const id = Number(a.contact_id);
+      const who = Number.isFinite(id) ? nameOf(id) : "联系人";
+      return { icon: "🔍", label: `查 ${who}${a.as_of ? " · 回看" : ""}` };
+    }
+    case "review_open_items":
+      return { icon: "📋", label: "盘点待办" };
+    case "record_memory_intents": {
+      const n = Array.isArray(a.intents) ? a.intents.length : 0;
+      return { icon: "✎", label: n ? `记 ${n} 笔` : "记一笔" };
+    }
+    default:
+      return { icon: "•", label: ev.name };
+  }
+}
