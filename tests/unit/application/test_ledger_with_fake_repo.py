@@ -19,6 +19,7 @@ class FakeRepo:
 
     def __init__(self) -> None:
         self.inserted: list[tuple[IntentRecord, bool]] = []
+        self.purged: list[tuple[str, str, str]] = []
         self._next_id = 1
 
     def insert(self, record: IntentRecord, *, auto_apply: bool) -> InsertOutcome:
@@ -38,6 +39,10 @@ class FakeRepo:
 
     def effective(self, entity, user_id, row_id, *, as_of=None):  # pragma: no cover
         return None
+
+    def purge_row(self, entity, user_id, row_id) -> int:
+        self.purged.append((entity, user_id, str(row_id)))
+        return 3  # 假装删了 3 条
 
 
 def test_invalid_shape_short_circuits_before_repo():
@@ -111,3 +116,14 @@ def test_expire_before_signature_ok():
     repo = FakeRepo()
     led = MemoryLedger(repo)
     assert led.expire_before(datetime(2026, 1, 1)) == 0
+
+
+def test_purge_row_delegates_and_invalidates_cache():
+    repo = FakeRepo()
+    led = MemoryLedger(repo)
+    led.snapshot("u1", "today", lambda: "snap")  # 填缓存
+    n = led.purge_row("person", "u1", 7)
+    assert n == 3
+    assert repo.purged == [("person", "u1", "7")]
+    # purge 后应失效该 user 的读模型缓存
+    assert led.snapshot("u1", "today", lambda: "REBUILT") == "REBUILT"

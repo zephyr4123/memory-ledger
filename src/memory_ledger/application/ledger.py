@@ -220,6 +220,17 @@ class MemoryLedger:
             self.cache.invalidate(uid)
         return len(affected)
 
+    def purge_row(self, entity: str, user_id: str, row_id: int | str) -> int:
+        """硬删某实体某行的全部 intent (删除该行时连带抹除其账本记忆). 返回删除条数.
+
+        物理删除 (非软流转), 用于不留僵尸地移除一个实体行的全部记忆痕迹。删后失效该
+        user 的读模型缓存。
+        """
+        n = self.repo.purge_row(entity, user_id, row_id)
+        if n:
+            self.cache.invalidate(user_id)
+        return n
+
     # ── read path ───────────────────────────────────────────────────
     def effective(
         self,

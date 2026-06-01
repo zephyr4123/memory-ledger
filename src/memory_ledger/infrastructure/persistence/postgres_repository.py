@@ -209,6 +209,23 @@ class PostgresIntentRepository:
         )
         return [str(r["user_id"]) for r in rows]
 
+    def purge_row(self, entity: str, user_id: str, row_id: int | str) -> int:
+        """硬删某实体某行的全部 intent. 多租户隔离 (必过滤 user_id, 越权删不到).
+
+        target_row_id 列是 TEXT, 按 str(row_id) 比较 (与写入端一致)。行内 superseded_by
+        自引用是 ON DELETE SET NULL, 故同批互引安全, 无需先解链。
+        """
+        rows = self.db.fetchall(
+            """
+            DELETE FROM l15_change_intents
+            WHERE user_id = %s AND target_entity = %s
+              AND COALESCE(target_row_id, '') = COALESCE(%s, '')
+            RETURNING id
+            """,
+            [user_id, entity, str(row_id)],
+        )
+        return len(rows)
+
     # ── read ─────────────────────────────────────────────────────────
     def effective(
         self,

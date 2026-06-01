@@ -69,6 +69,15 @@ class IntentRepository(Protocol):
         """把 applied_at < cutoff 的 live intent 标 EXPIRED. 返回受影响的 user_id 列表."""
         ...
 
+    def purge_row(self, entity: str, user_id: str, row_id: int | str) -> int:
+        """硬删某实体某行的全部 intent (彻底抹除该行的账本记忆). 返回删除条数. 多租户隔离.
+
+        与 reject/expire (软流转, 留痕) 不同, 这是物理删除 —— 用于"删除该实体行"时连带
+        清掉它名下所有记忆, 不留僵尸数据. 行内 superseded_by 自引用由 ON DELETE SET NULL
+        兜住 (同批删除内的互引也安全).
+        """
+        ...
+
     def effective(
         self,
         entity: str,
