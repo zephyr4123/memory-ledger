@@ -10,18 +10,19 @@ from collections.abc import Iterator
 from typing import Any, Protocol, runtime_checkable
 
 from ..config import Settings
+from ..tools import ToolContext
 from .litellm_responder import LiteLLMResponder
 from .offline import OfflineResponder
 
 
 @runtime_checkable
 class TurnResponder(Protocol):
-    """库 Responder 端口 + 流式 stream_turn 的合体 (chat 路由要流式)。"""
+    """库 Responder 端口 + 流式 agent loop 的合体 (chat 路由要流式 + 自主工具调用)。"""
 
     def respond(self, *, utterance: str, snapshot: str, turn: int) -> Any: ...
 
     def stream_turn(
-        self, *, utterance: str, snapshot: str, person_id: int
+        self, *, utterance: str, ctx: ToolContext
     ) -> Iterator[tuple[str, Any]]: ...
 
 

@@ -1,13 +1,11 @@
-"""LiteLLMResponder —— 库 Responder 端口的通用实现, 经 LiteLLM 接任意 provider.
+"""LiteLLMResponder —— 经 LiteLLM 接任意 provider 的 responder。
 
-LiteLLM 把所有 provider 统一成 OpenAI ChatCompletions 接口 (含 tools / 流式), 因此
-换模型只是改 env (LLM_MODEL / LLM_API_KEY / LLM_BASE_URL), 代码零改动 —— DeepSeek /
-OpenAI / 任意 OpenAI 兼容端点 / Anthropic 皆可。
+* stream_turn(...)  产品主路径: **agent loop** —— 模型自主调读工具(list_contacts /
+  get_contact / review_open_items)去查信息、调写工具暂存改动, 多轮直到给出回复;全程流式。
+  信息不再 prefill 进 prompt, 由小本自己决定查什么(涌现)。
+* respond(...)      legacy 单次路径(库 Responder 端口 / 非 agentic 复用): snapshot 注入 + 写工具。
 
-两条用法:
-  * respond(...)     非流式, 实现 Responder 端口 (供 AgentLoop / 测试复用)。
-  * stream_turn(...) 流式, 供 chat 路由: 先连续吐回复 token, 末尾吐结构化 intent。
-结构化产出走 tool-use (而非让模型手写 JSON 文本), 最稳。
+换模型只改 env(LLM_MODEL / LLM_API_KEY / LLM_BASE_URL), 代码零改动。
 """
 
 from __future__ import annotations
@@ -18,7 +16,11 @@ from typing import Any
 
 from memory_ledger import Response
 
-from .prompts import TOOL, TOOL_NAME, build_system_prompt, tool_intents_to_proposed
+from ..tools import ToolContext, dispatch, openai_schemas
+from ..tools.contacts import TOOL_NAME
+from .prompts import build_agent_system_prompt, build_system_prompt, tool_intents_to_proposed
+
+_MAX_ROUNDS = 6  # agent 自主调工具的轮数上限 (防死循环)
 
 
 def _intents_from_tool_calls(tool_calls: Any) -> list[Any]:
@@ -34,77 +36,143 @@ def _intents_from_tool_calls(tool_calls: Any) -> list[Any]:
     return raw
 
 
-class LiteLLMResponder:
-    """用 LiteLLM 同步应答: 一句话 → reply + 4-kind intent (provider 无关)。"""
+def _focus_line(ctx: ToolContext) -> str:
+    try:
+        eff = ctx.ledger.effective("person", ctx.user_id, ctx.focus_person_id)
+    except Exception:  # noqa: BLE001 — 定位行拿不到不该挡住对话
+        eff = None
+    if not eff:
+        return f"#{ctx.focus_person_id}(信息暂缺)"
+    name = eff.get("full_name_eff") or "未命名"
+    extra = " · ".join(x for x in [eff.get("role_eff"), eff.get("employer_eff")] if x)
+    return f"#{ctx.focus_person_id} {name}" + (f"({extra})" if extra else "")
 
+
+class LiteLLMResponder:
     def __init__(
         self,
         *,
         model: str,
         api_key: str,
         base_url: str | None = None,
-        person_id: int | None = None,
         max_tokens: int = 2048,
+        request_timeout: float = 60.0,
     ) -> None:
         import litellm
 
-        litellm.drop_params = True  # 跨 provider: 丢弃该家不支持的参数而非报错
+        litellm.drop_params = True
         litellm.suppress_debug_info = True
         self._litellm = litellm
         self._model = model
         self._api_key = api_key
         self._base_url = base_url
-        self._person_id = person_id
         self._max_tokens = max_tokens
+        self._request_timeout = request_timeout
 
-    def _kwargs(self, snapshot: str, utterance: str) -> dict[str, Any]:
+    def _kwargs(self, messages: list[dict[str, Any]], **extra: Any) -> dict[str, Any]:
         kw: dict[str, Any] = {
             "model": self._model,
-            "messages": [
-                {"role": "system", "content": build_system_prompt(snapshot)},
-                {"role": "user", "content": utterance},
-            ],
-            "tools": [TOOL],
-            "tool_choice": "auto",
+            "messages": messages,
             "api_key": self._api_key,
             "max_tokens": self._max_tokens,
+            "timeout": self._request_timeout,
+            **extra,
         }
         if self._base_url:
             kw["api_base"] = self._base_url
         return kw
 
-    # ── Responder 端口 (非流式) ─────────────────────────────────────────
+    # ── legacy 单次路径 (库 Responder 端口) ──────────────────────────────
     def respond(self, *, utterance: str, snapshot: str, turn: int) -> Response:
-        resp = self._litellm.completion(**self._kwargs(snapshot, utterance))
+        messages = [
+            {"role": "system", "content": build_system_prompt(snapshot)},
+            {"role": "user", "content": utterance},
+        ]
+        resp = self._litellm.completion(
+            **self._kwargs(messages, tools=openai_schemas([TOOL_NAME]), tool_choice="auto")
+        )
         msg = resp.choices[0].message
         reply = (getattr(msg, "content", None) or "").strip()
         raw = _intents_from_tool_calls(getattr(msg, "tool_calls", None))
-        return Response(
-            reply=reply,
-            intents=tuple(tool_intents_to_proposed(raw, self._person_id)),
-        )
+        return Response(reply=reply, intents=tuple(tool_intents_to_proposed(raw, None)))
 
-    # ── 流式 (chat 路由用) ──────────────────────────────────────────────
-    def stream_turn(
-        self, *, utterance: str, snapshot: str, person_id: int
+    # ── 产品主路径: agent loop (流式 + 自主工具调用) ──────────────────────
+    def stream_turn(self, *, utterance: str, ctx: ToolContext) -> Iterator[tuple[str, Any]]:
+        messages: list[dict[str, Any]] = [
+            {"role": "system", "content": build_agent_system_prompt(_focus_line(ctx))},
+            {"role": "user", "content": utterance},
+        ]
+        tools = openai_schemas()
+        answered = False
+
+        for _ in range(_MAX_ROUNDS):
+            content, calls = yield from self._stream_round(messages, tools, "auto")
+            if not calls:  # 模型直接给了回复 → 这轮就是最终答复
+                answered = True
+                break
+            # 把本轮 assistant(含 tool_calls)+ 每个工具结果回灌, 供下一轮参考
+            messages.append(
+                {
+                    "role": "assistant",
+                    "content": content or None,
+                    "tool_calls": [
+                        {
+                            "id": c["id"],
+                            "type": "function",
+                            "function": {"name": c["name"], "arguments": c["args"] or "{}"},
+                        }
+                        for c in calls
+                    ],
+                }
+            )
+            for c in calls:
+                try:
+                    args = json.loads(c["args"]) if c["args"].strip() else {}
+                except ValueError:
+                    args = {}
+                result = dispatch(c["name"], args, ctx)
+                messages.append(
+                    {
+                        "role": "tool",
+                        "tool_call_id": c["id"],
+                        "content": json.dumps(result, ensure_ascii=False, default=str),
+                    }
+                )
+
+        if not answered:  # 到达轮数上限仍在调工具 → 强制要一句收尾回复
+            yield from self._stream_round(messages, tools=None, tool_choice="none")
+
+        yield ("intents", list(ctx.staged_intents))
+
+    def _stream_round(
+        self, messages: list[dict[str, Any]], tools: list[dict[str, Any]] | None, tool_choice: str
     ) -> Iterator[tuple[str, Any]]:
-        """先连续 yield ('delta', text_chunk), 最后 yield ('intents', list[ProposedIntent])。
+        """流式跑一轮: yield ('delta', text) 给用户; 返回 (拼好的 content, 工具调用列表)。
 
-        OpenAI 流式里 tool_call 的 arguments 是分片到达的, 按 index 累积后再 json 解析。
+        作为子生成器被 `yield from` —— 它的 return 值就是 (content, calls)。
         """
+        extra: dict[str, Any] = {"stream": True}
+        if tools:
+            extra["tools"] = tools
+            extra["tool_choice"] = tool_choice
+        parts: list[str] = []
         args_by_index: dict[int, str] = {}
         names_by_index: dict[int, str] = {}
+        ids_by_index: dict[int, str] = {}
 
-        for chunk in self._litellm.completion(**self._kwargs(snapshot, utterance), stream=True):
+        for chunk in self._litellm.completion(**self._kwargs(messages, **extra)):
             choices = getattr(chunk, "choices", None)
             if not choices:
                 continue
             delta = choices[0].delta
-            content = getattr(delta, "content", None)
-            if content:
-                yield ("delta", content)
+            text = getattr(delta, "content", None)
+            if text:
+                parts.append(text)
+                yield ("delta", text)
             for tc in getattr(delta, "tool_calls", None) or []:
                 idx = tc.index if getattr(tc, "index", None) is not None else 0
+                if getattr(tc, "id", None):
+                    ids_by_index[idx] = tc.id
                 fn = getattr(tc, "function", None)
                 if fn is None:
                     continue
@@ -113,12 +181,8 @@ class LiteLLMResponder:
                 if getattr(fn, "arguments", None):
                     args_by_index[idx] = args_by_index.get(idx, "") + fn.arguments
 
-        raw: list[Any] = []
-        for idx, args in args_by_index.items():
-            if names_by_index.get(idx) != TOOL_NAME:
-                continue
-            try:
-                raw.extend(json.loads(args).get("intents", []))
-            except (ValueError, AttributeError):
-                continue
-        yield ("intents", tool_intents_to_proposed(raw, person_id))
+        calls = [
+            {"id": ids_by_index.get(i, f"call_{i}"), "name": names_by_index[i], "args": args_by_index.get(i, "")}
+            for i in sorted(names_by_index)
+        ]
+        return "".join(parts), calls

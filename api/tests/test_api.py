@@ -30,11 +30,9 @@ class FakeResponder:
     def respond(self, *, utterance: str, snapshot: str, turn: int) -> Response:
         return Response(self.reply, (self._patch(utterance, 1),))
 
-    def stream_turn(
-        self, *, utterance: str, snapshot: str, person_id: int
-    ) -> Iterator[tuple[str, Any]]:
+    def stream_turn(self, *, utterance: str, ctx: Any) -> Iterator[tuple[str, Any]]:
         yield ("delta", self.reply)
-        yield ("intents", [self._patch(utterance, person_id)])
+        yield ("intents", [self._patch(utterance, ctx.focus_person_id)])
 
     @staticmethod
     def _patch(utterance: str, person_id: int) -> ProposedIntent:

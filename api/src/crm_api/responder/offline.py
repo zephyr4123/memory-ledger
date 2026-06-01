@@ -11,9 +11,11 @@ from typing import Any
 
 from memory_ledger import Response
 
+from ..tools import ToolContext
+
 _NOTICE = (
-    "(离线模式: 未配置 LLM_API_KEY, 记忆写入已禁用。"
-    "配置 key 后即为真 LLM 对话, 会实时回复并产出待确认的结构化改动。)"
+    "(离线模式: 未配置 LLM_API_KEY, 小本暂时只能看、不能记。"
+    "配置 key 后即为真 LLM 对话, 小本会自己查记忆、实时回复, 并把改动停在确认闸门等你点头。)"
 )
 
 
@@ -21,8 +23,6 @@ class OfflineResponder:
     def respond(self, *, utterance: str, snapshot: str, turn: int) -> Response:
         return Response(reply=_NOTICE, intents=())
 
-    def stream_turn(
-        self, *, utterance: str, snapshot: str, person_id: int
-    ) -> Iterator[tuple[str, Any]]:
+    def stream_turn(self, *, utterance: str, ctx: ToolContext) -> Iterator[tuple[str, Any]]:
         yield ("delta", _NOTICE)
         yield ("intents", [])
