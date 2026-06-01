@@ -34,6 +34,8 @@ target-version = "py312"
 src = ["src", "tests"]
 
 [tool.ruff.lint]
-select = ["E", "F", "I", "UP", "B", "SIM", "RUF"]
+select = ["E", "F", "I", "UP", "B", "BLE", "SIM", "RUF"]
 # B008: FastAPI 的 `Depends()` 写在参数默认值里是框架惯用法, 非 bug。
-ignore = ["B008"]
+# RUF001/002/003: 本项目大量使用中文全角标点(，。：（）—— 等), 是有意为之而非
+#   "易混淆字符", 故关闭这组 ambiguous-unicode 误报(否则每条中文文案都会触发)。
+ignore = ["B008", "RUF001", "RUF002", "RUF003"]
