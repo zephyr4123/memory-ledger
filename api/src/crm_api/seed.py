@@ -90,9 +90,10 @@ def seed_demo(conn: Any, user_id: str = "u1") -> None:
     # location: Berlin 低置信改动 + FLAG → 改动被拒 (仍 SF), FLAG 留存
     r3 = w("PATCH", {"location": "Berlin"}, field="location", layer="AGENT_INFERENCE",
            source_id="seed-5", quote="I think she relocated to Berlin", conf=0.55)
+    # FLAG 置信度需 ≥ 阈值(0.6)才 auto-apply: 0.7 = "确信此字段该标疑"
     w("FLAG", {"flag_reason": "unconfirmed relocation"}, field="location",
       layer="AGENT_INFERENCE", source_id="seed-6", quote="I think she relocated to Berlin",
-      conf=0.55)
+      conf=0.7)
     ledger.reject(user_id, [r3.intent_id], reason="user said she stays in SF")
 
     # 第二个联系人: 一条断言, 让列表不孤单

@@ -33,6 +33,17 @@ docs/
 tests/
 conftest.py
 examples/personal_crm/tests/
+api/tests/
+
+# Node / 前端构建产物 (web 镜像内部 npm install + build, 不要把宿主的塞进上下文)
+node_modules/
+web/node_modules/
+web/dist/
+web/.vite/
+
+# 本地 env (含密钥, 绝不进镜像)
+.env
+*.local
 
 # Docker 元数据自身 (不进上下文 COPY)
 Dockerfile

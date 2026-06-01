@@ -55,20 +55,30 @@
                                        (下一轮 LLM 看到)
 ```
 
-## 跑起来看(Docker,一行)
+## 跑起来看(Docker,一行起全栈对话台)
 
-装了 Docker 就够,不用 Python / conda / Postgres:
+装了 Docker 就够,不用本地 Python / Node / Postgres:
 
 ```bash
-docker compose up        # 起 Postgres → 自动建表 → 跑 Personal-CRM demo → 打印对话
-docker compose down -v   # 用完清掉 (含数据卷)
+cp .env.example .env       # 填入 ANTHROPIC_API_KEY (真 LLM 对话); 不填则 mock 模式
+docker compose up --build  # 起 db + api + web
+# 浏览器打开 http://localhost:8080
+docker compose down -v     # 用完清掉 (含数据卷)
 ```
 
-你会在日志里看到一段脚本化对话,把三大差异化演出来:**高危字段改动先挂"待确认 banner"等你拍板**、**employer 随时间 Acme→Globex 的 as-of 时光机**、**被拒绝的改动零副作用**。全程离线、确定性、零 API key(`MockExtractor` 是冻结脚本)。
+这是一个**对话式、真 LLM 驱动**的 Personal-CRM 记忆台(代号 Chronograph,暗色仪表台 UI):
+你对它说一句话 → LLM 实时回复并**产出结构化 intent** → **高危改动先挂 amber 确认闸门等你拍板** →
+你确认后才落库 → 拖**时间轴时光机**回看任意历史时点的真相 → 每条事实带**逐字 source_quote 溯源**。
 
-编排细节见根目录 `docker-compose.yml`:`db`(Postgres,开发档调优)+ `app`(demo),并预留了将来 Web UI 的 `api` / `web` 服务槽。想连库自己玩:`postgresql://memory_ledger:memory_ledger@localhost:5433/memory_ledger`。
+| 服务 | 端口 | 说明 |
+|---|---|---|
+| `web` | http://localhost:8080 | React 前端(nginx 服务 + 反代 `/api`) |
+| `api` | http://localhost:8000 | FastAPI 后端(SSE 对话 / 时光机 / 账本 / 确认闸门) |
+| `db` | localhost:5433 | Postgres(开发档调优) |
 
-> 想跑那 103 个测试,仍走本地 `pytest`(用 testcontainers 自起一次性 PG),见下方"5 分钟上手"。
+> 没配 `ANTHROPIC_API_KEY` 也能起:seed 的 Sarah 故事、时光机、溯源、账本都能看,只是对话走 mock 不写真记忆。
+> 后端/前端各有 README(`api/README.md`、`web/`)。原命令行脚本 demo 仍在:`docker compose --profile demo run --rm demo`。
+> 库的 103 个测试走本地 `pytest`(testcontainers 自起 PG),见下方"5 分钟上手"。
 
 ## 5 分钟上手
 

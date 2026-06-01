@@ -1,9 +1,10 @@
-# memory-ledger —— 本地一键编排.
+# memory-ledger —— 全栈对话式记忆台, 一行起.
 #
-# 一行体验:   docker compose up
-#   → 起 Postgres → 健康检查通过 → app 自动 apply 迁移链 + 跑 Personal-CRM demo
-#     + 把对话/待确认 banner 打到日志 → app 退出 (db 继续在)
-# 重置数据:   docker compose down -v
+#   docker compose up --build         起 db + api + web; 浏览器开 http://localhost:8080
+#   docker compose down -v            停并清数据卷
+#
+# 真 LLM 对话需要 ANTHROPIC_API_KEY (放进 .env, 见 .env.example);
+# 不配则 api 以 mock 模式运行 —— 全栈仍可起、可看 seed 数据/时光机/溯源, 仅对话非真智能。
 name: memory-ledger
 
 services:
@@ -13,9 +14,8 @@ services:
       POSTGRES_USER: memory_ledger
       POSTGRES_PASSWORD: memory_ledger
       POSTGRES_DB: memory_ledger
-    # ⚠️ 开发/demo 档调优: 这是一次性演示库, 不是生产数据.
-    #    关闭 fsync / synchronous_commit / full_page_writes 换数倍写入吞吐.
-    #    断电/崩溃可能损坏数据 —— 严禁用于任何真实/生产数据.
+    # ⚠️ 开发/demo 档调优: 一次性演示库, 非生产数据. 关闭 fsync 等换写入吞吐,
+    #    崩溃可能损坏数据 —— 严禁用于真实数据.
     command:
       - postgres
       - -c
@@ -30,44 +30,62 @@ services:
       - max_connections=50
     volumes:
       - pgdata:/var/lib/postgresql/data
-    # 映射到宿主 5433 (避开本机可能占用的 5432). 外部工具连:
-    #   postgresql://memory_ledger:memory_ledger@localhost:5433/memory_ledger
     ports:
-      - "5433:5432"
+      - "${DB_PORT:-5433}:5432" # 宿主端口可用 .env 的 DB_PORT 覆盖 (默认 5433)
     healthcheck:
-      # 等 db 真正可接受连接, 而非靠 sleep 猜时机.
       test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
       interval: 2s
       timeout: 3s
       retries: 15
       start_period: 5s
 
-  app:
+  api:
+    build:
+      context: . # 上下文=仓库根 (需同时访问库源码与 api/)
+      dockerfile: api/Dockerfile
+    image: memory-ledger-api:local
+    depends_on:
+      db:
+        condition: service_healthy # db 健康才起, 杜绝竞态
+    environment:
+      DATABASE_URL: postgresql://memory_ledger:memory_ledger@db:5432/memory_ledger
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-} # 空=mock 模式
+      MEMORY_LEDGER_MODEL: ${MEMORY_LEDGER_MODEL:-claude-sonnet-4-6}
+    ports:
+      - "${API_PORT:-8000}:8000" # 宿主端口被占时用 .env 的 API_PORT 覆盖
+    healthcheck:
+      test:
+        - "CMD-SHELL"
+        - "python -c \"import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://localhost:8000/api/health').getcode()==200 else 1)\""
+      interval: 3s
+      timeout: 4s
+      retries: 20
+      start_period: 5s
+
+  web:
+    build:
+      context: .
+      dockerfile: web/Dockerfile
+    image: memory-ledger-web:local
+    depends_on:
+      api:
+        condition: service_healthy # api 就绪才放行 (nginx 反代 /api)
+    ports:
+      - "${WEB_PORT:-8080}:80" # 浏览器入口; 被占时用 .env 的 WEB_PORT 覆盖
+
+  # 可选: 原命令行脚本 demo (6 轮剧本打印到日志), 默认不起。
+  #   docker compose --profile demo run --rm demo
+  demo:
+    profiles: ["demo"]
     build:
       context: .
       dockerfile: Dockerfile
     image: memory-ledger:local
     depends_on:
       db:
-        condition: service_healthy   # db 健康才起, 杜绝竞态
+        condition: service_healthy
     environment:
       DATABASE_URL: postgresql://memory_ledger:memory_ledger@db:5432/memory_ledger
-    # 默认 CMD = 跑 demo (见 Dockerfile). 其它入口按需:
-    #   docker compose run --rm app memory-ledger init-db "$DATABASE_URL"
-    #   docker compose run --rm app python -m examples.personal_crm.run_demo
-    #   docker compose run --rm app bash
-
-  # ── 未来 Web UI 的编排槽 (现在不写占位代码, 只占位置, 来了直接填) ──────────
-  # api:                       # FastAPI/Flask 后端, 复用同一个 db
-  #   build: { context: ., dockerfile: docker/api.Dockerfile }
-  #   depends_on: { db: { condition: service_healthy } }
-  #   environment:
-  #     DATABASE_URL: postgresql://memory_ledger:memory_ledger@db:5432/memory_ledger
-  #   ports: ["8000:8000"]
-  # web:                       # 前端 (Vite/Next 等), 走 api
-  #   build: { context: ./web }
-  #   depends_on: [api]
-  #   ports: ["3000:3000"]
 
 volumes:
   pgdata:
