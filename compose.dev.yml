@@ -1,0 +1,22 @@
+# Docker 开发模式 (HMR) —— 叠加在 docker-compose.yml 之上, 只改 web 一个服务:
+# 把 nginx 静态服务换成 vite dev server + 挂载 ./web 源码, 改前端代码浏览器秒变, 无需重建镜像。
+# db / api 仍用各自镜像不变。
+#
+#   起 (前端热重载):   docker compose -f docker-compose.yml -f compose.dev.yml up -d web
+#   看日志:            docker compose logs -f web
+#   回到生产镜像模式:  docker compose up -d --build web
+#
+# 说明: 复用 web/Dockerfile 的 builder 阶段 (已含 node + 依赖), 不进 nginx; 不改 Dockerfile,
+#       故生产构建路径 (target=runtime) 完全不受影响。
+services:
+  web:
+    build:
+      target: builder # 停在构建阶段: 有 node 与 node_modules, 跑 dev server 而非 nginx
+    command: npm run dev -- --host 0.0.0.0 --port 80
+    environment:
+      VITE_API_PROXY: http://api:8000 # vite 把 /api 代理到 api 容器 (compose 网络内 DNS)
+      VITE_HMR_CLIENT_PORT: ${WEB_PORT:-8080} # HMR websocket 经宿主映射端口回连
+      VITE_USE_POLLING: "true" # macOS Docker 卷监听不可靠 → 轮询保证 HMR 稳定
+    volumes:
+      - ./web:/app # 源码热挂载 → 改文件即触发 HMR
+      - /app/node_modules # 匿名卷: 容器内依赖不被宿主目录覆盖
