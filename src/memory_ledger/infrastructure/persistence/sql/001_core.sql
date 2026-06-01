@@ -47,10 +47,12 @@ CREATE TABLE l15_change_intents (
     kind               TEXT NOT NULL
                        CHECK (kind IN ('PATCH','ASSERT','ANNOTATE','FLAG')),
 
-    -- TODO: 列出所有可被 intent 锚定的业务实体表名.
-    -- 加新 entity 必须改这里 + 写对应 effective_<entity>_at 函数.
+    -- 默认 path: 命名 CHECK 锁死合法实体白名单 (anti-LLM-noise, 见 docs/01-design.md 坑3).
+    -- 命名约束 chk_target_entity 让未来的 DROP/ADD (如切到注册表 FK, 见 003) 可确定地引用.
+    -- 加新 entity 两条路: (a) 默认 path — 改这里白名单 + 写 effective_<entity>_at;
+    --                     (b) 注册表 path (003_entity_registry.sql, opt-in) — 改成 INSERT 一行.
     target_entity      TEXT NOT NULL
-                       CHECK (target_entity IN (
+                       CONSTRAINT chk_target_entity CHECK (target_entity IN (
                            'todo_item',
                            'project'
                        )),
@@ -182,10 +184,17 @@ CREATE UNIQUE INDEX uq_l15_idempotent ON l15_change_intents (
     COALESCE(target_row_id, ''), COALESCE(target_field, ''), kind
 ) WHERE status <> 'REJECTED';
 
--- 并发安全: 任一 (user, entity, row, field) 至多一条 live PATCH.
--- 配合 runtime 的 advisory lock + auto-supersede 触发器, 杜绝 "两条 live PATCH".
+-- 并发安全 + 双轨冲突模型: 任一 (user, entity, row, field, **source_layer**) 至多一条
+-- live PATCH. 加 source_layer 是关键 —— 它把"改口"(同 source_layer 后写覆盖前写, 走
+-- auto-supersede) 与"多源仲裁"(不同 source_layer 共存, 由 effective 的 patch_latest 按
+-- source_priority 决胜) 分开:
+--   * 同 layer 连续改 (USER_DIRECT 改完又改) → 后写 supersede 前写 (改口, last-writer)
+--   * 跨 layer 共存 (USER_DIRECT + AGENT_INFERENCE) → 都 live, effective 按 priority 选
+--     USER_DIRECT(0) 压 AGENT_INFERENCE(4) —— 兑现设计 §5 "用户哪怕不太肯定也比 agent
+--     自信猜测权威". 若不带 source_layer, 后写的 AGENT 会 supersede 先写的 USER, 令
+--     priority 仲裁永不触发 (degenerate 成 last-writer-wins, 与设计相悖).
 CREATE UNIQUE INDEX uq_l15_one_live_patch ON l15_change_intents (
-    user_id, target_entity, COALESCE(target_row_id, ''), target_field
+    user_id, target_entity, COALESCE(target_row_id, ''), target_field, source_layer
 ) WHERE kind = 'PATCH' AND status = 'APPLIED' AND superseded_by IS NULL;
 
 CREATE TRIGGER trg_l15_updated_at
@@ -220,6 +229,8 @@ BEGIN
         NEW.id := nextval(pg_get_serial_sequence('l15_change_intents', 'id'));
     END IF;
 
+    -- 只 supersede 同 source_layer 的旧 live PATCH (改口语义). 跨 layer 的留着,
+    -- 交给 effective 的 patch_latest 按 source_priority 仲裁 (多源共存).
     UPDATE l15_change_intents prev
     SET superseded_by = NEW.id,
         status        = 'SUPERSEDED'
@@ -227,6 +238,7 @@ BEGIN
       AND prev.target_entity = NEW.target_entity
       AND prev.target_row_id IS NOT DISTINCT FROM NEW.target_row_id
       AND prev.target_field  = NEW.target_field
+      AND prev.source_layer  = NEW.source_layer
       AND prev.kind          = 'PATCH'
       AND prev.status        = 'APPLIED'
       AND prev.superseded_by IS NULL

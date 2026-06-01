@@ -26,6 +26,18 @@ class InsertOutcome(NamedTuple):
     created: bool
 
 
+class UnknownEntityError(LookupError):
+    """读一个语法合法但未注册 (无 effective_<entity>_at 函数) 的实体.
+
+    把底层驱动的 UndefinedFunction 包装成一个稳定的领域错误, 让调用方能精确捕获
+    "实体没注册" 而不是泛泛的 SQL 错误.
+    """
+
+    def __init__(self, entity: str) -> None:
+        super().__init__(f"unknown / unregistered entity: {entity!r}")
+        self.entity = entity
+
+
 @runtime_checkable
 class IntentRepository(Protocol):
     """账本的持久化契约 (写入 / 生命周期流转 / effective 读取)."""

@@ -38,11 +38,14 @@ from __future__ import annotations
 
 # ── application (用例) ──────────────────────────────────────────────
 from .application import MemoryLedger, SnapshotCache
+from .application.agent_loop import AgentLoop, Banner, TurnResult
+from .application.ledger import WriteResult
 
 # ── 组合根 ──────────────────────────────────────────────────────────
 from .bootstrap import open_postgres
 
 # ── domain (业务核心) ───────────────────────────────────────────────
+from .domain.extraction import Extraction, ProposedIntent
 from .domain.intents import (
     KINDS,
     SOURCE_LAYERS,
@@ -63,18 +66,27 @@ from .infrastructure.persistence import (
     apply_schema,
     bundled_sql,
 )
+from .infrastructure.persistence.schema import CRM_MIGRATIONS, DEFAULT_MIGRATIONS
 
 # ── ports (抽象) ────────────────────────────────────────────────────
 from .ports import DBAdapter, InsertOutcome, IntentRepository, Row
+from .ports.extractor import Extractor
+from .ports.repository import UnknownEntityError
 
 __version__ = "0.1.0"
 
 __all__ = [
+    "CRM_MIGRATIONS",
+    "DEFAULT_MIGRATIONS",
     "DEFAULT_THRESHOLD",
     "KINDS",
     "SOURCE_LAYERS",
+    "AgentLoop",
     "AutoApplyPolicy",
+    "Banner",
     "DBAdapter",
+    "Extraction",
+    "Extractor",
     "InsertOutcome",
     "IntentRecord",
     "IntentRepository",
@@ -82,10 +94,14 @@ __all__ = [
     "Kind",
     "MemoryLedger",
     "PostgresIntentRepository",
+    "ProposedIntent",
     "PsycopgAdapter",
     "Row",
     "SnapshotCache",
     "SourceLayer",
+    "TurnResult",
+    "UnknownEntityError",
+    "WriteResult",
     "__version__",
     "apply_schema",
     "bundled_sql",

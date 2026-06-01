@@ -14,7 +14,18 @@ from ...ports.database import DBAdapter
 
 CORE_MIGRATION = "001_core.sql"
 EXAMPLE_MIGRATION = "002_example_todo.sql"
+# Opt-in 迁移 (不在 DEFAULT_MIGRATIONS): 实体注册表 + Personal-CRM 的 person 实体.
+# 默认 path 保持 (001,002) 不变, 已有测试与 init-db 不受影响.
+REGISTRY_MIGRATION = "003_entity_registry.sql"
+PERSON_MIGRATION = "004_person.sql"
 DEFAULT_MIGRATIONS: tuple[str, ...] = (CORE_MIGRATION, EXAMPLE_MIGRATION)
+# Personal-CRM demo 的完整迁移链 (注册表 path).
+CRM_MIGRATIONS: tuple[str, ...] = (
+    CORE_MIGRATION,
+    EXAMPLE_MIGRATION,
+    REGISTRY_MIGRATION,
+    PERSON_MIGRATION,
+)
 
 _SQL_PACKAGE = "memory_ledger.infrastructure.persistence.sql"
 

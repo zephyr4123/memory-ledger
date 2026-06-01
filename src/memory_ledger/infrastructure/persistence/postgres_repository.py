@@ -21,15 +21,19 @@ from typing import Any
 
 from ...domain.intents import IntentRecord
 from ...ports.database import DBAdapter, Row
-from ...ports.repository import InsertOutcome
+from ...ports.repository import InsertOutcome, UnknownEntityError
 from .serialization import to_jsonb
 
 # entity 名会被拼进 effective_<entity>_at 函数名, 必须是合法标识符 (防注入).
 _IDENT = re.compile(r"^[a-z_][a-z0-9_]*$")
 
 
-def _lock_key(user_id: str, entity: str, row_id: str | None, field: str | None) -> str:
-    return f"{user_id}|{entity}|{row_id or ''}|{field or ''}"
+def _lock_key(
+    user_id: str, entity: str, row_id: str | None, field: str | None, layer: str
+) -> str:
+    # 含 source_layer: 锁的粒度与 uq_l15_one_live_patch 一致 (同 layer 串行化改口,
+    # 不同 layer 各自一条 live, 由 effective 按 priority 仲裁).
+    return f"{user_id}|{entity}|{row_id or ''}|{field or ''}|{layer}"
 
 
 class PostgresIntentRepository:
@@ -37,6 +41,9 @@ class PostgresIntentRepository:
 
     def __init__(self, db: DBAdapter) -> None:
         self.db = db
+        # 已验证存在 effective_<entity>_at 函数的实体集 (per-repo 缓存).
+        # 注册的函数只在 migration 时变, 进程内静态 → 探测一次即可, 不必每次读都 round-trip.
+        self._validated_entities: set[str] = set()
 
     # ── write ────────────────────────────────────────────────────────
     def insert(self, record: IntentRecord, *, auto_apply: bool) -> InsertOutcome:
@@ -46,7 +53,10 @@ class PostgresIntentRepository:
             if needs_lock:
                 tx.execute(
                     "SELECT pg_advisory_xact_lock(hashtext(%s))",
-                    [_lock_key(r.user_id, r.target_entity, r.target_row_id, r.target_field)],
+                    [_lock_key(
+                        r.user_id, r.target_entity, r.target_row_id,
+                        r.target_field, r.source_layer,
+                    )],
                 )
 
             existing = tx.fetchone(
@@ -104,7 +114,7 @@ class PostgresIntentRepository:
         with self.db.transaction() as tx:
             targets = tx.fetchall(
                 """
-                SELECT id, kind, target_entity, target_row_id, target_field
+                SELECT id, kind, target_entity, target_row_id, target_field, source_layer
                 FROM l15_change_intents
                 WHERE id = ANY(%s) AND user_id = %s AND status = 'PROPOSED'
                 ORDER BY id
@@ -117,11 +127,13 @@ class PostgresIntentRepository:
                         "SELECT pg_advisory_xact_lock(hashtext(%s))",
                         [
                             _lock_key(
-                                user_id, t["target_entity"],
-                                t["target_row_id"], t["target_field"],
+                                user_id, t["target_entity"], t["target_row_id"],
+                                t["target_field"], t["source_layer"],
                             )
                         ],
                     )
+                    # 只 supersede 同 source_layer 的旧 live PATCH (改口), 跨 layer 留给
+                    # effective 按 priority 仲裁 —— 与 001 的 auto-supersede 触发器一致.
                     tx.execute(
                         """
                         UPDATE l15_change_intents prev
@@ -129,12 +141,13 @@ class PostgresIntentRepository:
                         WHERE prev.user_id = %s AND prev.target_entity = %s
                           AND COALESCE(prev.target_row_id,'') = COALESCE(%s,'')
                           AND prev.target_field = %s
+                          AND prev.source_layer = %s
                           AND prev.kind = 'PATCH' AND prev.status = 'APPLIED'
                           AND prev.superseded_by IS NULL AND prev.id <> %s
                         """,
                         [
-                            t["id"], user_id, t["target_entity"],
-                            t["target_row_id"], t["target_field"], t["id"],
+                            t["id"], user_id, t["target_entity"], t["target_row_id"],
+                            t["target_field"], t["source_layer"], t["id"],
                         ],
                     )
                 tx.execute(
@@ -199,6 +212,17 @@ class PostgresIntentRepository:
         if not _IDENT.match(entity):
             raise ValueError(f"invalid entity identifier: {entity!r}")
         fn = f"effective_{entity}_at"
+        # 实体语法合法但没有对应 effective 函数 (未注册) → 抛稳定的领域错误, 而不是
+        # 泄漏 psycopg 的 UndefinedFunction. 探测结果缓存 per-repo: 首次未命中才 round-trip,
+        # 之后热读路径零额外查询 (函数集只在 migration 变).
+        if entity not in self._validated_entities:
+            probe = self.db.fetchone(
+                "SELECT to_regprocedure(%s) AS oid",
+                [f"{fn}(text,bigint,timestamptz)"],
+            )
+            if probe is None or probe["oid"] is None:
+                raise UnknownEntityError(entity)
+            self._validated_entities.add(entity)
         if as_of is None:
             return self.db.fetchone(
                 f"SELECT * FROM {fn}(%s, %s, clock_timestamp())",

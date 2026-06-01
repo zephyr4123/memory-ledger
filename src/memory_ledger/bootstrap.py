@@ -20,6 +20,7 @@ def open_postgres(
     field_aliases: dict[str, str] | None = None,
     value_aliases: dict[str, dict[str, str]] | None = None,
     cache: SnapshotCache | None = None,
+    known_entities: set[str] | None = None,
 ) -> MemoryLedger:
     """便捷工厂: 用一个 psycopg 连接装配好 adapter → repository → ledger.
 
@@ -38,4 +39,5 @@ def open_postgres(
         field_aliases=field_aliases,
         value_aliases=value_aliases,
         cache=cache,
+        known_entities=known_entities,
     )
