@@ -1,0 +1,58 @@
+/* Chronograph 设计 token —— 全站唯一真源 (颜色/字体/间距/动效)。
+   规则: 电青 = 系统主调与"生效/现在"; 琥珀 = 且仅 = 人工确认闸门; 红 = 拒绝。 */
+:root {
+  /* canvas / surfaces */
+  --bg: #090b0f;
+  --bg-grid: rgba(255, 255, 255, 0.022);
+  --surface-1: #0e1217;
+  --surface-2: #141a22;
+  --surface-3: #1b232d;
+
+  /* hairlines */
+  --line: rgba(255, 255, 255, 0.07);
+  --line-strong: rgba(255, 255, 255, 0.14);
+
+  /* text */
+  --text: #e7edf4;
+  --text-dim: #9aa6b6;
+  --text-faint: #5c6675;
+
+  /* signature accent — electric teal */
+  --accent: #57e7c9;
+  --accent-dim: #2f8f7e;
+  --accent-ink: #04130f;
+  --accent-glow: rgba(87, 231, 201, 0.45);
+  --accent-soft: rgba(87, 231, 201, 0.1);
+
+  /* amber — reserved for the confirmation gate */
+  --amber: #ffb84d;
+  --amber-ink: #1a1100;
+  --amber-glow: rgba(255, 184, 77, 0.42);
+  --amber-soft: rgba(255, 184, 77, 0.11);
+
+  /* status */
+  --red: #f2685c;
+  --red-soft: rgba(242, 104, 92, 0.12);
+  --violet: #9b8cff;
+
+  /* type */
+  --font-mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  --font-display: "Instrument Serif", Georgia, "Times New Roman", serif;
+
+  /* radius / spacing */
+  --r-sm: 6px;
+  --r-md: 10px;
+  --r-lg: 16px;
+  --r-pill: 999px;
+  --pad: 16px;
+
+  /* motion */
+  --ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --dur: 0.42s;
+  --dur-fast: 0.2s;
+
+  /* depth */
+  --shadow-1: inset 0 1px 0 rgba(255, 255, 255, 0.04), 0 10px 34px rgba(0, 0, 0, 0.5);
+  --shadow-glow: 0 0 0 1px var(--accent-soft), 0 0 30px -8px var(--accent-glow);
+}

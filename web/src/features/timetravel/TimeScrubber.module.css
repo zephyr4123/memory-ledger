@@ -1,0 +1,121 @@
+.wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.readout {
+  font-size: 12px;
+  letter-spacing: 0.04em;
+}
+.now {
+  color: var(--accent);
+}
+.past {
+  color: var(--amber);
+}
+
+.controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.step {
+  flex: none;
+  width: 26px;
+  height: 26px;
+  display: grid;
+  place-items: center;
+  font-size: 16px;
+  color: var(--text-dim);
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+  transition: all var(--dur-fast) var(--ease);
+}
+.step:hover:not(:disabled) {
+  color: var(--accent);
+  border-color: var(--accent-dim);
+}
+.step:disabled {
+  opacity: 0.3;
+  cursor: default;
+}
+
+.track {
+  position: relative;
+  flex: 1;
+  height: 34px;
+  display: flex;
+  align-items: center;
+}
+
+.rail {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: var(--line-strong);
+  border-radius: 2px;
+}
+.fill {
+  position: absolute;
+  left: 0;
+  height: 2px;
+  background: linear-gradient(90deg, var(--accent-dim), var(--accent));
+  box-shadow: 0 0 10px var(--accent-glow);
+  border-radius: 2px;
+}
+
+.tick {
+  position: absolute;
+  top: 50%;
+  width: 9px;
+  height: 9px;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  background: var(--surface-3);
+  border: 1px solid var(--line-strong);
+  transition:
+    background var(--dur-fast) var(--ease),
+    border-color var(--dur-fast) var(--ease);
+}
+.tick:hover {
+  border-color: var(--accent);
+}
+.tickPast {
+  background: var(--accent-dim);
+  border-color: var(--accent);
+}
+.nowTick {
+  width: 7px;
+  height: 18px;
+  border-radius: 3px;
+}
+.tickOn {
+  border-color: var(--accent);
+}
+
+.handle {
+  position: absolute;
+  top: 50%;
+  width: 16px;
+  height: 16px;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow:
+    0 0 0 4px var(--accent-soft),
+    0 0 18px var(--accent-glow);
+  pointer-events: none;
+}
+
+.hint {
+  font-size: 10.5px;
+  color: var(--text-faint);
+}

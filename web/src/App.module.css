@@ -1,0 +1,96 @@
+.shell {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  padding: 14px;
+  gap: 14px;
+}
+
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 2px 8px;
+}
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.mark {
+  font-size: 20px;
+  color: var(--accent);
+  text-shadow: 0 0 14px var(--accent-glow);
+}
+.wordmark {
+  font-size: 16px;
+  letter-spacing: 0.02em;
+  color: var(--text);
+}
+.thin {
+  color: var(--accent);
+}
+.tag {
+  font-size: 9.5px;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+  padding: 3px 9px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-pill);
+}
+.tagline {
+  font-size: 11px;
+  color: var(--text-faint);
+  letter-spacing: 0.02em;
+}
+
+.grid {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: 248px minmax(0, 1fr) 424px;
+  gap: 14px;
+}
+
+.col {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+}
+.colCenter {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-width: 0;
+  min-height: 0;
+}
+.fill {
+  flex: 1;
+  min-height: 0;
+}
+
+.scrubber {
+  margin-top: 20px;
+  padding-top: 18px;
+  border-top: 1px solid var(--line);
+}
+
+.chatCol {
+  background: var(--surface-1);
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-1);
+  overflow: hidden;
+}
+
+@media (max-width: 1080px) {
+  .grid {
+    grid-template-columns: 220px minmax(0, 1fr);
+  }
+  .chatCol {
+    display: none;
+  }
+}

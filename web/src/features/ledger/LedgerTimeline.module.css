@@ -1,0 +1,117 @@
+.timeline {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+}
+
+.row {
+  position: relative;
+  display: grid;
+  grid-template-columns: 18px 1fr;
+  gap: 12px;
+  padding: 12px 0;
+}
+/* 连接线 */
+.row::before {
+  content: "";
+  position: absolute;
+  left: 8px;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: var(--line);
+}
+.row:first-child::before {
+  top: 18px;
+}
+.row:last-child::before {
+  bottom: calc(100% - 18px);
+}
+
+.node {
+  position: relative;
+  z-index: 1;
+  width: 10px;
+  height: 10px;
+  margin-top: 5px;
+  border-radius: 50%;
+  background: var(--surface-3);
+  border: 2px solid var(--text-faint);
+}
+.k_PATCH {
+  border-color: var(--violet);
+}
+.k_ASSERT {
+  border-color: var(--accent);
+}
+.k_ANNOTATE {
+  border-color: var(--text-dim);
+}
+.k_FLAG {
+  border-color: var(--amber);
+}
+
+.content {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+.dead {
+  opacity: 0.55;
+}
+
+.line1 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.layer {
+  font-size: 9.5px;
+  letter-spacing: 0.1em;
+  color: var(--text-faint);
+}
+.time {
+  margin-left: auto;
+  font-size: 10.5px;
+  color: var(--text-faint);
+}
+
+.summary {
+  font-size: 13.5px;
+  color: var(--text);
+  word-break: break-word;
+}
+.strike {
+  text-decoration: line-through;
+  text-decoration-color: var(--text-faint);
+  color: var(--text-dim);
+}
+
+.quote {
+  font-size: 12px;
+  color: var(--accent);
+  padding: 4px 0 4px 11px;
+  border-left: 2px solid var(--accent-dim);
+  font-style: italic;
+}
+
+.meta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  font-size: 10.5px;
+  color: var(--text-faint);
+}
+.id {
+  margin-left: auto;
+  opacity: 0.7;
+}
+
+.empty {
+  padding: 18px 0;
+  color: var(--text-faint);
+  font-size: 12px;
+}
