@@ -79,3 +79,19 @@ class IntentRepository(Protocol):
     ) -> Row | None:
         """调 effective_<entity>_at(user_id, row_id, as_of) 合成截至某时点的真相."""
         ...
+
+    def list_intents(
+        self,
+        entity: str,
+        user_id: str,
+        row_id: int | str,
+        *,
+        statuses: Sequence[str] | None = None,
+    ) -> list[Row]:
+        """列出某实体某行的原始 intent 流水 (不合成), 按时间升序. 多租户隔离.
+
+        与 effective 互补: effective 合成"截至某刻的真相", 本方法返回构成它的每条
+        原始 intent 行 (含 status / source_layer / source_quote / 各时间戳), 供上层
+        画审计时间轴 + 逐字溯源. statuses 给定时只返回这些状态的行.
+        """
+        ...

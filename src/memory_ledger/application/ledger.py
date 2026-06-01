@@ -232,6 +232,20 @@ class MemoryLedger:
         """合成 entity 行截至某时点的真相 (as_of=None → 现在)."""
         return self.repo.effective(entity, user_id, row_id, as_of=as_of)
 
+    def history(
+        self,
+        entity: str,
+        user_id: str,
+        row_id: int | str,
+        *,
+        statuses: Sequence[str] | None = None,
+    ) -> list[Row]:
+        """某实体某行的原始 intent 流水 (账本审计时间轴 + 逐字溯源). 纯读, 不碰缓存.
+
+        与 effective (合成真相) 互补: 这里返回构成真相的每条原始 intent.
+        """
+        return self.repo.list_intents(entity, user_id, row_id, statuses=statuses)
+
     def snapshot(
         self,
         user_id: str,

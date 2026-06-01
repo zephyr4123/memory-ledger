@@ -27,6 +27,15 @@ from .serialization import to_jsonb
 # entity 名会被拼进 effective_<entity>_at 函数名, 必须是合法标识符 (防注入).
 _IDENT = re.compile(r"^[a-z_][a-z0-9_]*$")
 
+# list_intents 返回的列 (账本审计/时间轴). 显式列出而非 SELECT *, 让该读契约稳定、
+# 不随表演进意外漂移; 顺序与"一条 intent 的完整事实"对齐.
+_INTENT_COLUMNS = (
+    "id, user_id, kind, target_entity, target_date, target_row_id, target_field, "
+    "patch_json, reason, source_layer, source_priority, source_table, source_id, "
+    "source_quote, extracted_by, confidence, status, applied_at, superseded_by, "
+    "rejected_reason, rejected_at, expired_at, created_at, updated_at"
+)
+
 
 def _lock_key(
     user_id: str, entity: str, row_id: str | None, field: str | None, layer: str
@@ -231,4 +240,37 @@ class PostgresIntentRepository:
         return self.db.fetchone(
             f"SELECT * FROM {fn}(%s, %s, %s)",
             [user_id, int(row_id), as_of],
+        )
+
+    def list_intents(
+        self,
+        entity: str,
+        user_id: str,
+        row_id: int | str,
+        *,
+        statuses: Sequence[str] | None = None,
+    ) -> list[Row]:
+        """某实体某行的原始 intent 流水 (不合成), 按时间升序. 见端口 docstring.
+
+        多租户: 必过滤 user_id, 越权读不到. entity/row_id/statuses 全走绑定参数,
+        无字符串拼接注入面 (与 effective 拼函数名不同, 这里表/列名固定).
+        target_row_id 列是 TEXT, 故按 str(row_id) 比较 (与写入端一致).
+        """
+        clauses = [
+            "user_id = %s",
+            "target_entity = %s",
+            "COALESCE(target_row_id, '') = COALESCE(%s, '')",
+        ]
+        params: list[Any] = [user_id, entity, str(row_id)]
+        if statuses is not None:
+            clauses.append("status = ANY(%s)")
+            params.append(list(statuses))
+        return self.db.fetchall(
+            f"""
+            SELECT {_INTENT_COLUMNS}
+            FROM l15_change_intents
+            WHERE {" AND ".join(clauses)}
+            ORDER BY created_at, id
+            """,
+            params,
         )
