@@ -51,13 +51,15 @@ memory-ledger = "memory_ledger.interface.cli:main"
 packages = ["src/memory_ledger"]
 artifacts = ["src/memory_ledger/infrastructure/persistence/sql/*.sql"]
 
+# examples/ 随源码分发 (sdist) 供阅读, 但 NOT 进 wheel (上面 wheel.packages 只含
+# src/memory_ledger) —— pip 安装的用户拿不到脚本化 mock, 发布包零示例代码/零模型依赖.
 [tool.hatch.build.targets.sdist]
-include = ["src/memory_ledger", "README.md", "LICENSE", "NOTICE", "docs"]
+include = ["src/memory_ledger", "README.md", "LICENSE", "NOTICE", "docs", "examples"]
 
 [tool.ruff]
 line-length = 100
 target-version = "py312"
-src = ["src", "tests"]
+src = ["src", "tests", "examples"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B", "SIM", "RUF"]
@@ -65,11 +67,16 @@ select = ["E", "F", "I", "UP", "B", "SIM", "RUF"]
 [tool.mypy]
 python_version = "3.12"
 strict = true
-packages = ["memory_ledger"]
 mypy_path = "src"
+explicit_package_bases = true
+# 类型门控发布库 + 参考应用源码 (examples 是 canonical "怎么接" 模板, 不该游离在门外).
+# 测试函数不强制注解 (与库一样: tests/ 历来不进 strict 门), 故排除 **/tests/.
+files = ["src/memory_ledger", "examples"]
+exclude = "(^|/)tests/"
 
 [tool.pytest.ini_options]
-testpaths = ["tests"]
+# examples/ 的测试也跑 (示例本身就是参考实现, 必须随核心一起验证)
+testpaths = ["tests", "examples"]
 markers = [
     "integration: tests that require a live Postgres (via testcontainers)",
 ]
