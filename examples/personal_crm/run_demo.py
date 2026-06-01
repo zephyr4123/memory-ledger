@@ -19,8 +19,8 @@ from typing import Any
 from memory_ledger import MemoryLedger
 from memory_ledger.application.agent_loop import AgentLoop, Banner
 
-from .mock_extractor import MockExtractor
 from .policy import FIELD_ALIASES, VALUE_ALIASES
+from .responder import MockResponder
 from .snapshot import build_person_snapshot
 from .transcript import SEED_PERSON, TRANSCRIPT, ScriptedTurn
 
@@ -50,7 +50,7 @@ def run_transcript(
     """
     loop = AgentLoop(
         ledger,
-        MockExtractor(script),
+        MockResponder(script),
         lambda uid: build_person_snapshot(ledger, uid, [person_id]),
     )
     pending: dict[str, int] = {}  # field -> 待确认的 PATCH intent id

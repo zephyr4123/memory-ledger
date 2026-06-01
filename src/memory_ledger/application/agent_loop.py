@@ -1,13 +1,13 @@
 """AgentLoop —— 可复用的单轮对话编排 (application 层).
 
-把"一轮 chat"的固定时序固化成一个 fold, 构造时注入 (MemoryLedger, Extractor,
+把"一轮 chat"的固定时序固化成一个 fold, 构造时注入 (MemoryLedger, Responder,
 snapshot_builder). 只依赖 application + ports + domain, **绝不 import infrastructure**
-—— 它是编排, 不是组合根 (具体 ledger/extractor 由调用方在组合根装配后注入).
+—— 它是编排, 不是组合根 (具体 ledger/responder 由调用方在组合根装配后注入).
 
 一轮时序 (对应 docs/01-design.md §9 的端到端流程):
   1. SNAPSHOT  —— 取本轮注入模型的上下文 (经 ledger.snapshot 缓存). 关键: 它**不含**
                   本轮稍后才写的 intent (snapshot 在请求开始时取, 下一轮才看到本轮的写).
-  2. EXTRACT   —— extractor.extract(utterance, snapshot, turn) → Extraction (reply + intents).
+  2. RESPOND   —— responder.respond(utterance, snapshot, turn) → Response (reply + intents).
   3. WRITE     —— 每条 ProposedIntent 走 ledger.write_intent (内部 normalize/validate/
                   auto-apply), 返回 WriteResult. 低危 ASSERT/ANNOTATE/FLAG 直接 APPLIED;
                   高危 PATCH 落 PROPOSED.
@@ -26,9 +26,9 @@ from __future__ import annotations
 from collections.abc import Callable, Hashable
 from dataclasses import dataclass
 
-from ..domain.extraction import Extraction, ProposedIntent
+from ..domain.conversation import ProposedIntent, Response
 from ..domain.intents.types import SourceLayer
-from ..ports.extractor import Extractor
+from ..ports.responder import Responder
 from .ledger import MemoryLedger
 
 # snapshot_builder: (user_id) -> 纯函数, 构建注入模型的 snapshot 文本.
@@ -58,7 +58,7 @@ class AgentLoop:
     def __init__(
         self,
         ledger: MemoryLedger,
-        extractor: Extractor,
+        responder: Responder,
         snapshot_builder: SnapshotBuilder,
         *,
         source_table: str = "chat_message",
@@ -66,7 +66,7 @@ class AgentLoop:
         patch_source_layer: SourceLayer = "AGENT_INFERENCE",
     ) -> None:
         self.ledger = ledger
-        self.extractor = extractor
+        self.responder = responder
         self.snapshot_builder = snapshot_builder
         self.source_table = source_table
         self.default_source_layer = default_source_layer
@@ -88,20 +88,20 @@ class AgentLoop:
             user_id, scope, lambda: self.snapshot_builder(user_id)
         )
 
-        # 2. EXTRACT
-        extraction: Extraction = self.extractor.extract(
+        # 2. RESPOND
+        response: Response = self.responder.respond(
             utterance=utterance, snapshot=snapshot, turn=turn
         )
 
         # 3. WRITE + 4. BANNER
         banners: list[Banner] = []
-        for pi in extraction.intents:
+        for pi in response.intents:
             banner = self._write_one(user_id, pi, source_id)
             if banner is not None:
                 banners.append(banner)
 
         # 5. REPLY
-        return TurnResult(reply=extraction.reply, banners=tuple(banners))
+        return TurnResult(reply=response.reply, banners=tuple(banners))
 
     def _write_one(
         self, user_id: str, pi: ProposedIntent, source_id: str

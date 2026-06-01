@@ -1,6 +1,6 @@
-"""单元: AgentLoop 编排逻辑, 用功能性 FakeRepo + MockExtractor 驱动, 零 DB.
+"""单元: AgentLoop 编排逻辑, 用功能性 FakeRepo + MockResponder 驱动, 零 DB.
 
-这是六边形重构的直接红利: AgentLoop 只认 IntentRepository / Extractor 端口, 可注入
+这是六边形重构的直接红利: AgentLoop 只认 IntentRepository / Responder 端口, 可注入
 内存 fake, 毫秒级验证全部编排不变量 —— 完全不碰 Postgres.
 
 证明:
@@ -16,7 +16,7 @@ from collections.abc import Sequence
 
 from memory_ledger import AutoApplyPolicy, MemoryLedger
 from memory_ledger.application.agent_loop import AgentLoop
-from memory_ledger.domain.extraction import Extraction, ProposedIntent
+from memory_ledger.domain.conversation import ProposedIntent, Response
 from memory_ledger.domain.intents import IntentRecord
 from memory_ledger.ports.repository import InsertOutcome
 
@@ -74,12 +74,12 @@ class FakeRepo:
         return None
 
 
-# ── 脚本化 MockExtractor (turn-keyed) ────────────────────────────────
-class MockExtractor:
-    def __init__(self, script: Sequence[tuple[str, Extraction]]) -> None:
+# ── 脚本化 MockResponder (turn-keyed) ────────────────────────────────
+class MockResponder:
+    def __init__(self, script: Sequence[tuple[str, Response]]) -> None:
         self._script = tuple(script)
 
-    def extract(self, *, utterance: str, snapshot: str, turn: int) -> Extraction:
+    def respond(self, *, utterance: str, snapshot: str, turn: int) -> Response:
         u, ex = self._script[turn]
         assert u == utterance, f"transcript drift at turn {turn}"
         return ex  # snapshot 被接受但忽略 → 纯函数
@@ -89,7 +89,7 @@ def test_patch_becomes_banner_low_risk_does_not():
     repo = FakeRepo()
     ledger = MemoryLedger(repo, auto_apply=AutoApplyPolicy.low_risk_for(["person"]))
     script = [
-        ("u1 says", Extraction(reply="ok", intents=(
+        ("u1 says", Response(reply="ok", intents=(
             ProposedIntent(kind="PATCH", target_entity="person", target_row_id="1",
                            target_field="employer", patch_json={"employer": "Acme"},
                            source_quote="works at Acme", confidence=0.9),
@@ -97,7 +97,7 @@ def test_patch_becomes_banner_low_risk_does_not():
                            patch_json={"role": "PM"}, source_quote="she is a PM", confidence=0.9),
         ))),
     ]
-    loop = AgentLoop(ledger, MockExtractor(script), lambda uid: "snap")
+    loop = AgentLoop(ledger, MockResponder(script), lambda uid: "snap")
     result = loop.run_turn("u1", "u1 says", 0, source_id="m0")
     assert result.reply == "ok"
     # 只有 PATCH 进 banner
@@ -112,12 +112,12 @@ def test_source_quote_is_verbatim_substring():
     repo = FakeRepo()
     ledger = MemoryLedger(repo, auto_apply=AutoApplyPolicy.low_risk_for(["person"]))
     utterance = "she just started at Acme last week"
-    script = [(utterance, Extraction(reply="noted", intents=(
+    script = [(utterance, Response(reply="noted", intents=(
         ProposedIntent(kind="ASSERT", target_entity="person", target_row_id="1",
                        patch_json={"employer": "Acme"},
                        source_quote="she just started at Acme", confidence=0.9),
     )))]
-    loop = AgentLoop(ledger, MockExtractor(script), lambda uid: "snap")
+    loop = AgentLoop(ledger, MockResponder(script), lambda uid: "snap")
     loop.run_turn("u1", utterance, 0, source_id="m0")
     fact = repo.applied_facts[("person", "1")][0]
     assert fact["source_quote"] in utterance  # verbatim 截取, 非 paraphrase
@@ -135,13 +135,13 @@ def test_pre_write_snapshot_excludes_this_turns_fact():
         return "facts=" + ";".join(str(f["payload"]) for f in facts)
 
     script = [
-        ("turn0", Extraction(reply="r0", intents=(
+        ("turn0", Response(reply="r0", intents=(
             ProposedIntent(kind="ASSERT", target_entity="person", target_row_id="1",
                            patch_json={"employer": "Acme"}, source_quote="at Acme", confidence=0.9),
         ))),
-        ("turn1", Extraction(reply="r1", intents=())),
+        ("turn1", Response(reply="r1", intents=())),
     ]
-    loop = AgentLoop(ledger, MockExtractor(script), snapshot_builder)
+    loop = AgentLoop(ledger, MockResponder(script), snapshot_builder)
 
     # turn 0: snapshot 取时还没写 → 空; 写后 fake.applied_facts 有了 Acme
     s0 = ledger.snapshot("u1", 0, lambda: snapshot_builder("u1"))
@@ -158,12 +158,12 @@ def test_pre_write_snapshot_excludes_this_turns_fact():
 
 def test_full_run_is_deterministic():
     script = [
-        ("a", Extraction(reply="ra", intents=(
+        ("a", Response(reply="ra", intents=(
             ProposedIntent(kind="PATCH", target_entity="person", target_row_id="1",
                            target_field="employer", patch_json={"employer": "Acme"},
                            source_quote="at Acme", confidence=0.9),
         ))),
-        ("b", Extraction(reply="rb", intents=(
+        ("b", Response(reply="rb", intents=(
             ProposedIntent(kind="ANNOTATE", target_entity="person", target_row_id="1",
                            patch_json={"annotation": "note"}, source_quote="note", confidence=0.9),
         ))),
@@ -172,7 +172,7 @@ def test_full_run_is_deterministic():
     def run_once() -> list[tuple[str, int]]:
         repo = FakeRepo()
         ledger = MemoryLedger(repo, auto_apply=AutoApplyPolicy.low_risk_for(["person"]))
-        loop = AgentLoop(ledger, MockExtractor(script), lambda uid: "snap")
+        loop = AgentLoop(ledger, MockResponder(script), lambda uid: "snap")
         out = []
         for i, (utt, _) in enumerate(script):
             r = loop.run_turn("u1", utt, i, source_id=f"m{i}")
@@ -186,11 +186,11 @@ def test_full_run_is_deterministic():
 def test_invalid_shape_intent_is_dropped_no_banner():
     repo = FakeRepo()
     ledger = MemoryLedger(repo, auto_apply=AutoApplyPolicy.low_risk_for(["person"]))
-    script = [("x", Extraction(reply="r", intents=(
+    script = [("x", Response(reply="r", intents=(
         # PATCH 缺 target_field → ledger.insert_intent 返回 None → 不进 banner
         ProposedIntent(kind="PATCH", target_entity="person", target_row_id="1",
                        patch_json={"employer": "Acme"}, source_quote="q", confidence=0.9),
     )))]
-    loop = AgentLoop(ledger, MockExtractor(script), lambda uid: "snap")
+    loop = AgentLoop(ledger, MockResponder(script), lambda uid: "snap")
     result = loop.run_turn("u1", "x", 0, source_id="m0")
     assert result.banners == ()

@@ -22,21 +22,21 @@ export DATABASE_URL=postgresql://localhost/mydb
 python -m examples.personal_crm.run_demo
 ```
 
-> 全程不需要任何 API key:`MockExtractor` 是一张冻结的 turn 表,不调任何模型。
-> 想接真模型?实现 `memory_ledger.ports.extractor.Extractor`(解析模型的 JSON → `Extraction`)替换 `MockExtractor` 即可,其余不动。
+> 全程不需要任何 API key:`MockResponder` 是一张冻结的 turn 表,不调任何模型。
+> 想接真模型?实现 `memory_ledger.ports.responder.Responder`(解析模型的 JSON → `Response`)替换 `MockResponder` 即可,其余不动。真 LLM 实现见 `api/`(`LiteLLMResponder`,经 LiteLLM 接任意 provider)。
 
 ## 它怎么搭起来的(对应六边形分层)
 
 ```
 examples/personal_crm/
 ├── transcript.py      冻结的对话脚本 (6 个 ScriptedTurn, 演 9 步叙事)
-├── mock_extractor.py  实现 ports.Extractor: 按轮号取脚本, 纯函数 (忽略 snapshot)
+├── responder.py       实现 ports.Responder: 按轮号取脚本, 纯函数 (忽略 snapshot)
 ├── policy.py          person 的 AutoApplyPolicy + 字段/值别名 (纯数据)
 ├── snapshot.py        build_person_snapshot: effective 视图 → sanitize → 定界块
-└── run_demo.py        组合根: open_postgres + AgentLoop(ledger, MockExtractor)
+└── run_demo.py        组合根: open_postgres + AgentLoop(ledger, MockResponder)
 ```
 
-可复用的部分(`Extractor` 端口、`AgentLoop` 编排器)在**库里** (`src/memory_ledger/`);
+可复用的部分(`Responder` 端口、`AgentLoop` 编排器)在**库里** (`src/memory_ledger/`);
 实体特定的部分(脚本、mock、person 的 snapshot 拼装)在**示例里**——这正是六边形把
 "通用核心"和"业务边缘"分开的体现。`person` 实体本身由 `003`(注册表)+ `004`(person 表
 + `effective_person_at` + 注册行)两个 opt-in 迁移装上,核心 `001/002` 不动。

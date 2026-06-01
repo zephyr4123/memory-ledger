@@ -45,7 +45,7 @@ from .application.ledger import WriteResult
 from .bootstrap import open_postgres
 
 # ── domain (业务核心) ───────────────────────────────────────────────
-from .domain.extraction import Extraction, ProposedIntent
+from .domain.conversation import ProposedIntent, Response
 from .domain.intents import (
     KINDS,
     SOURCE_LAYERS,
@@ -70,8 +70,8 @@ from .infrastructure.persistence.schema import CRM_MIGRATIONS, DEFAULT_MIGRATION
 
 # ── ports (抽象) ────────────────────────────────────────────────────
 from .ports import DBAdapter, InsertOutcome, IntentRepository, Row
-from .ports.extractor import Extractor
 from .ports.repository import UnknownEntityError
+from .ports.responder import Responder
 
 __version__ = "0.1.0"
 
@@ -85,8 +85,6 @@ __all__ = [
     "AutoApplyPolicy",
     "Banner",
     "DBAdapter",
-    "Extraction",
-    "Extractor",
     "InsertOutcome",
     "IntentRecord",
     "IntentRepository",
@@ -96,6 +94,8 @@ __all__ = [
     "PostgresIntentRepository",
     "ProposedIntent",
     "PsycopgAdapter",
+    "Responder",
+    "Response",
     "Row",
     "SnapshotCache",
     "SourceLayer",

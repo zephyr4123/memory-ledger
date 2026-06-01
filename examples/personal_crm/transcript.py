@@ -1,7 +1,7 @@
 """冻结的 Personal-CRM 对话脚本 (6 个 ScriptedTurn, 演一段 9 步的叙事).
 
-每个 ScriptedTurn = (utterance, Extraction). Extraction 是预烘焙的"模型输出"
-(reply + 想写的 intent), 由 MockExtractor 按轮号取出 —— 全程确定性、零模型调用.
+每个 ScriptedTurn = (utterance, Response). Response 是预烘焙的"模型输出"
+(reply + 想写的 intent), 由 MockResponder 按轮号取出 —— 全程确定性、零模型调用.
 叙事里的 "yes"/"why?"/"show me" 这几步不产生新 intent (是确认/读-only), 故不作为
 独立 ScriptedTurn, 而由 confirm_after / 演示侧读取体现 —— 所以是 6 个脚本轮.
 
@@ -18,14 +18,14 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from memory_ledger.domain.extraction import Extraction, ProposedIntent
+from memory_ledger.domain.conversation import ProposedIntent, Response
 
 
 @dataclass(frozen=True, slots=True)
 class ScriptedTurn:
-    source_id: str          # 本轮消息 id (幂等 + 溯源键)
-    utterance: str          # 用户原话
-    extraction: Extraction  # 预烘焙的模型产物
+    source_id: str        # 本轮消息 id (幂等 + 溯源键)
+    utterance: str        # 用户原话
+    response: Response    # 预烘焙的模型产物
     # 演示编排提示 (run_demo 用; 不影响 ledger):
     confirm_after: bool = False  # 本轮结束模拟用户点"采纳"上一/本轮的 PATCH
     reject_field: str | None = None  # 本轮拒绝某字段的待确认 PATCH
@@ -78,7 +78,7 @@ TRANSCRIPT: tuple[ScriptedTurn, ...] = (
             "Add Sarah Lin — senior PM at Acme Corp in San Francisco, "
             "prefers email over calls."
         ),
-        extraction=Extraction(
+        response=Response(
             reply="Got it — saved Sarah Lin, senior PM at Acme Corp, SF, email-first.",
             intents=(
                 _assert(
@@ -91,7 +91,7 @@ TRANSCRIPT: tuple[ScriptedTurn, ...] = (
     ScriptedTurn(
         source_id="m2",
         utterance="Log it properly — she just started at Acme.",
-        extraction=Extraction(
+        response=Response(
             reply="I'd like to update her employer to 'Acme'. Confirm?",
             intents=(
                 _patch("employer", "Acme", "she just started at Acme", confidence=0.9),
@@ -103,7 +103,7 @@ TRANSCRIPT: tuple[ScriptedTurn, ...] = (
     ScriptedTurn(
         source_id="m4",
         utterance="Note she's juggling two roles right now, might be slow to reply.",
-        extraction=Extraction(
+        response=Response(
             reply="Noted.",
             intents=(
                 _annotate(
@@ -116,7 +116,7 @@ TRANSCRIPT: tuple[ScriptedTurn, ...] = (
     ScriptedTurn(
         source_id="m5",
         utterance="Update: she moved to Globex.",
-        extraction=Extraction(
+        response=Response(
             reply="Update her employer to 'Globex'? Confirm.",
             intents=(
                 _patch("employer", "Globex", "she moved to Globex", confidence=0.93),
@@ -128,7 +128,7 @@ TRANSCRIPT: tuple[ScriptedTurn, ...] = (
     ScriptedTurn(
         source_id="m6",
         utterance="I think she relocated to Berlin?",
-        extraction=Extraction(
+        response=Response(
             reply=(
                 "You're unsure — I'll hold a pending change of location to "
                 "'Berlin' for your confirmation."
@@ -143,7 +143,7 @@ TRANSCRIPT: tuple[ScriptedTurn, ...] = (
     ScriptedTurn(
         source_id="m9",
         utterance="No, she's still in SF, drop the Berlin thing.",
-        extraction=Extraction(
+        response=Response(
             reply="Done — discarded the Berlin relocation; she stays in San Francisco.",
             intents=(),  # 纯拒绝, 不写新 intent
         ),
