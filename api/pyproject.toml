@@ -1,0 +1,39 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "crm-api"
+version = "0.1.0"
+description = "FastAPI web backend for the memory-ledger Personal-CRM reference app — real LLM in the loop, deterministic ledger underneath."
+requires-python = ">=3.12"
+# memory-ledger 由 monorepo 在同一镜像里先行安装 (见 api/Dockerfile); 此处声明依赖,
+# pip 见其已满足即不回 PyPI。fastapi/anthropic/psycopg-pool 是 api 自身的运行时依赖。
+dependencies = [
+    "memory-ledger",
+    "fastapi>=0.115",
+    "uvicorn[standard]>=0.30",
+    "anthropic>=0.40",
+    "psycopg[binary]>=3.1",
+    "psycopg-pool>=3.2",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "httpx>=0.27",
+    "testcontainers[postgres]>=4.0",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/crm_api"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM", "RUF"]
+# B008: FastAPI 的 `Depends()` 写在参数默认值里是框架惯用法, 非 bug。
+ignore = ["B008"]
