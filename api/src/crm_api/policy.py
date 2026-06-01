@@ -40,6 +40,7 @@ FIELD_ALIASES: dict[str, str] = {
 
 VALUE_ALIASES: dict[str, dict[str, str]] = {
     "comm_pref": {
+        # 英文口语
         "call": "phone",
         "calls": "phone",
         "phone_call": "phone",
@@ -48,6 +49,17 @@ VALUE_ALIASES: dict[str, dict[str, str]] = {
         "text": "sms",
         "message": "sms",
         "dm": "sms",
+        # 中文口语 → canonical enum (防止真 LLM 吐中文值撞 CHECK 约束)
+        "邮件": "email",
+        "邮箱": "email",
+        "发邮件": "email",
+        "电话": "phone",
+        "打电话": "phone",
+        "电话联系": "phone",
+        "短信": "sms",
+        "发短信": "sms",
+        "微信": "sms",
+        "消息": "sms",
     },
 }
 
