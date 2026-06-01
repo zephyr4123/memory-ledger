@@ -88,10 +88,10 @@ def test_health_reports_mock_without_key(client: TestClient) -> None:
 def test_people_list_and_seeded_truth(client: TestClient) -> None:
     people = client.get("/api/people").json()
     names = {p["full_name"] for p in people}
-    assert {"Sarah Lin", "Marcus Reyes"} <= names
+    assert {"林思颖", "赵明轩"} <= names
     sarah = client.get("/api/people/1").json()
-    assert sarah["employer"] == "Globex"  # Acme Corp → Acme → Globex (seed)
-    assert sarah["location"] == "San Francisco"  # Berlin 被拒
+    assert sarah["employer"] == "Globex"  # 晨星科技 → 蓝湖科技 → Globex (seed)
+    assert sarah["location"] == "上海"  # 柏林 被拒
 
 
 def test_ledger_history_shows_supersede_and_reject(client: TestClient) -> None:
@@ -119,8 +119,8 @@ def test_turn_proposes_patch_then_confirm_changes_truth(client: TestClient) -> N
 
 
 def test_as_of_time_travel(client: TestClient) -> None:
-    # seed 之前的时点: 没有任何 PATCH 生效 → 回退到 raw 种子值 Acme Corp
+    # seed 之前的时点: 没有任何 PATCH 生效 → 回退到 raw 种子值 晨星科技
     past = client.get("/api/people/1", params={"as_of": "2000-01-01T00:00:00Z"}).json()
-    assert past["employer"] == "Acme Corp"
+    assert past["employer"] == "晨星科技"
     # 现在: Globex
     assert client.get("/api/people/1").json()["employer"] == "Globex"
