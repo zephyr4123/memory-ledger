@@ -9,7 +9,7 @@
 <p>
 将 agent 与用户关于业务实体的每次陈述记为一条 <b>typed intent</b>,写入单张<b>账本表</b>;<br>
 由纯 <b>SQL 函数</b>按时间戳<b>确定性重放</b>出任意时刻的真相。<b>读路径不含向量与 LLM。</b><br>
-<sub>可直接复用的<b>设计文档 + 模板代码</b> · <code>relational-first</code>,非 RAG / 向量 / 知识图谱</sub>
+<sub><b>relational-first</b> 的 agent 记忆设计与参考实现 · 易于扩展到你自己的业务 · 非 RAG / 向量 / 知识图谱</sub>
 </p>
 
 <table>
@@ -33,7 +33,7 @@
 
 将 agent 与用户的每次"事实陈述 / 字段改动 / 注释 / 标疑"记为一条 intent,写入同一张账本表 `l15_change_intents`;再由 PostgreSQL view 函数 `effective_*_at(as_of_ts)` 按时间戳合成"截至此刻的真相",供 agent 下一轮作为 context。跨会话记忆由此实现 —— **依赖 SQL 与时间戳,而非 embedding 与相似度**。
 
-本项目交付的是**设计文档与可复用的模板代码**(schema / runtime helper / 集成指南),而非需要安装的框架。文档以虚构的 **TodoAgent** 贯穿示例,复用时替换 schema 即可适配自身业务。对话应用「念念手记」仅为该理念的可视化外壳(参见下文演示)。
+Memory Ledger 是这套记忆机制的**设计与参考实现** —— 采用分层架构,账本核心(typed intent + `effective_*_at` 时点重放)与具体业务实体解耦。把示例实体换成你自己的业务表、核心逻辑原样复用,即可**轻松扩展到自身业务**;这正是它的设计目标。文档以虚构的 **TodoAgent** 贯穿示例;对话应用「念念手记」仅为该理念的可视化外壳(参见下文演示)。
 
 ---
 
@@ -253,7 +253,7 @@ docker compose down -v     # 用完清掉 (含数据卷)
 
 ## 📌 说明
 
-- 文档以虚构的 **TodoAgent** 贯穿示例;模板代码业务字段均为占位符,替换 schema 即可适配自身业务
+- 示例实体与数据均为虚构占位(TodoAgent / 念念手记),替换为你自己的业务实体即可扩展
 - 复用风险自负
 
 ## 📮 联系
