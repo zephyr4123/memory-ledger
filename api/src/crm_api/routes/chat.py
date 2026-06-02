@@ -78,6 +78,9 @@ def run_turn(
     def gen() -> Iterator[str]:
         sent_done = False
         person_id: int | None = None
+        # 在 try 外预声明 → 即便中途异常, except 也能把已流式产出的正文/思考落盘(不丢)
+        reply_parts: list[str] = []
+        reasoning_parts: list[str] = []
         try:
             # 整轮持一条连接: agent 的读工具在 loop 中途要查库
             with pool.connection() as conn:
@@ -106,15 +109,18 @@ def run_turn(
                 store.add_message(conn, user_id, conv_id, role="user", content=body.utterance)
                 history = store.list_messages(conn, user_id, conv_id)
 
-                reply_parts: list[str] = []
                 tool_log: dict[str, dict[str, Any]] = {}  # id → {name, args, ok, status}
                 intents: list[Any] = []
                 for kind, payload in responder.stream_turn(
-                    utterance=body.utterance, ctx=ctx, history=history
+                    utterance=body.utterance, ctx=ctx, history=history,
+                    thinking=body.thinking,
                 ):
                     if kind == "delta":
                         reply_parts.append(payload)
                         yield _sse("reply_delta", {"text": payload})
+                    elif kind == "reasoning":
+                        reasoning_parts.append(payload)
+                        yield _sse("reasoning_delta", {"text": payload})
                     elif kind == "tool_call":
                         tool_log[payload["id"]] = {
                             "id": payload["id"], "name": payload["name"],
@@ -130,11 +136,12 @@ def run_turn(
                     elif kind == "intents":
                         intents = list(payload)
 
-                # 落 agent 这条回复(正文 + 工具调用回执, 供回看)
+                # 落 agent 这条回复(正文 + 工具调用回执 + 思考过程, 供回看)
                 reply_text = "".join(reply_parts)
                 store.add_message(
                     conn, user_id, conv_id, role="agent",
                     content=reply_text, tools=list(tool_log.values()),
+                    reasoning="".join(reasoning_parts),
                 )
 
                 # 落盘暂存的 intent (PATCH 高危→PROPOSED 出 banner; 其余低危直落)
@@ -183,8 +190,11 @@ def run_turn(
                         p, ev = _refresh(ledger_for(c2), user_id, person_id)
                         person_d = p.model_dump() if p is not None else None
                         ledger_d = [e.model_dump() for e in ev]
+                        # 保留已流式吐出的正文/思考(回看与在线态一致); 全空才落错误占位
                         store.add_message(
-                            c2, user_id, conv_id, role="agent", content=_ERR_MSG,
+                            c2, user_id, conv_id, role="agent",
+                            content="".join(reply_parts) or _ERR_MSG,
+                            reasoning="".join(reasoning_parts),
                         )
                 except Exception:  # noqa: BLE001
                     pass

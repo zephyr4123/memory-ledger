@@ -18,6 +18,7 @@ class TurnRequest(BaseModel):
     utterance: str
     conversation_id: int
     person_id: int | None = None  # 焦点联系人; 缺省回退到对话记住的焦点
+    thinking: bool = False  # 开启深度思考(DeepSeek reasoning): 流式返回 reasoning_content
 
 
 class ConfirmRequest(BaseModel):
@@ -179,10 +180,12 @@ class ConversationOut(BaseModel):
 
 
 class ConvMessageOut(BaseModel):
-    """对话里的一条消息。tools = 这条 agent 回复期间的工具调用回执 (供回看)。"""
+    """对话里的一条消息。tools = 这条 agent 回复期间的工具调用回执 (供回看);
+    reasoning = 开启深度思考时小本的思考过程 (供折叠回看)。"""
 
     id: int
     role: str  # "user" | "agent"
     content: str
     tools: list[dict[str, Any]] = []
+    reasoning: str = ""
     created_at: datetime

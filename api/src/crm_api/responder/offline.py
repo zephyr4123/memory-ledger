@@ -30,6 +30,7 @@ class OfflineResponder:
         utterance: str,
         ctx: ToolContext,
         history: list[dict[str, Any]] | None = None,
+        thinking: bool = False,
     ) -> Iterator[tuple[str, Any]]:
         yield ("delta", _NOTICE)
         yield ("intents", [])

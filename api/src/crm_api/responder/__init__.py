@@ -27,6 +27,7 @@ class TurnResponder(Protocol):
         utterance: str,
         ctx: ToolContext,
         history: list[dict[str, Any]] | None = None,
+        thinking: bool = False,
     ) -> Iterator[tuple[str, Any]]: ...
 
 

@@ -22,6 +22,11 @@ from .prompts import build_agent_system_prompt, build_system_prompt, tool_intent
 
 _MAX_ROUNDS = 6  # agent 自主调工具的轮数上限 (防死循环)
 _MAX_HISTORY = 20  # 回灌进 prompt 的历史消息条数上限 (控 token)
+_THINKING_EFFORT = "high"  # DeepSeek 思考档位 (LiteLLM 当前会抹平为 thinking enabled)
+_THINKING_MAX_TOKENS = 4096  # 开思考时放宽输出上限 (思考会额外吃 token, 防正文被截)
+# DeepSeek V4 思考**默认开启**, 且 LiteLLM 暂不支持用 reasoning_effort="none" 关闭(实测无效);
+# 故关思考用 DeepSeek 原生 extra_body 显式 disabled(仅对 deepseek 模型下发, 不影响其它 provider)。
+_THINKING_DISABLED_BODY = {"thinking": {"type": "disabled"}}
 
 
 def _intents_from_tool_calls(tool_calls: Any) -> list[Any]:
@@ -104,9 +109,11 @@ class LiteLLMResponder:
         utterance: str,
         ctx: ToolContext,
         history: list[dict[str, Any]] | None = None,
+        thinking: bool = False,
     ) -> Iterator[tuple[str, Any]]:
         """流式跑一轮对话。yield 的事件:
         ('delta', text)        —— 回复 token
+        ('reasoning', text)    —— 深度思考 token (thinking=True 时的 reasoning_content)
         ('tool_call', {...})   —— 开始调某工具 (name + 解析好的 args), 供前端实时可视化
         ('tool_result', {...}) —— 该工具有了结果 (ok 与否)
         ('intents', [...])     —— 收尾: 本轮暂存的待写改动
@@ -123,27 +130,37 @@ class LiteLLMResponder:
 
         tools = openai_schemas()
         answered = False
+        had_reasoning = False  # 跨轮思考之间补一道分隔, 落盘/回看不糊成一团
 
         for _ in range(_MAX_ROUNDS):
-            content, calls = yield from self._stream_round(messages, tools, "auto")
+            content, calls, reasoning = yield from self._stream_round(
+                messages, tools, "auto",
+                thinking=thinking,
+                reasoning_prefix="\n\n" if had_reasoning else "",
+            )
+            had_reasoning = had_reasoning or bool(reasoning)
             if not calls:  # 模型直接给了回复 → 这轮就是最终答复
                 answered = True
                 break
-            # 把本轮 assistant(含 tool_calls)回灌, 供下一轮参考
-            messages.append(
-                {
-                    "role": "assistant",
-                    "content": content or None,
-                    "tool_calls": [
-                        {
-                            "id": c["id"],
-                            "type": "function",
-                            "function": {"name": c["name"], "arguments": c["args"] or "{}"},
-                        }
-                        for c in calls
-                    ],
-                }
-            )
+            # 把本轮 assistant(含 tool_calls)回灌, 供下一轮参考。
+            # 开思考时含工具调用的 assistant **必须**带 reasoning_content(哪怕空串) ——
+            # DeepSeek 规定: 含工具调用的 assistant 其 reasoning_content 须参与后续上下文,
+            # 缺该字段则多轮报 400; 关思考则不加此字段(保持旧行为)。
+            assistant_msg: dict[str, Any] = {
+                "role": "assistant",
+                "content": content or None,
+                "tool_calls": [
+                    {
+                        "id": c["id"],
+                        "type": "function",
+                        "function": {"name": c["name"], "arguments": c["args"] or "{}"},
+                    }
+                    for c in calls
+                ],
+            }
+            if thinking:
+                assistant_msg["reasoning_content"] = reasoning or ""
+            messages.append(assistant_msg)
             for c in calls:
                 try:
                     args = json.loads(c["args"]) if c["args"].strip() else {}
@@ -162,22 +179,44 @@ class LiteLLMResponder:
                 )
 
         if not answered:  # 到达轮数上限仍在调工具 → 强制要一句收尾回复
-            yield from self._stream_round(messages, tools=None, tool_choice="none")
+            # 收尾轮 tool_choice=none → 其后无请求, reasoning 无需带回(只流式给用户)
+            yield from self._stream_round(
+                messages, tools=None, tool_choice="none",
+                thinking=thinking,
+                reasoning_prefix="\n\n" if had_reasoning else "",
+            )
 
         yield ("intents", list(ctx.staged_intents))
 
     def _stream_round(
-        self, messages: list[dict[str, Any]], tools: list[dict[str, Any]] | None, tool_choice: str
+        self,
+        messages: list[dict[str, Any]],
+        tools: list[dict[str, Any]] | None,
+        tool_choice: str,
+        *,
+        thinking: bool = False,
+        reasoning_prefix: str = "",
     ) -> Iterator[tuple[str, Any]]:
-        """流式跑一轮: yield ('delta', text) 给用户; 返回 (拼好的 content, 工具调用列表)。
+        """流式跑一轮: yield ('reasoning', t) / ('delta', t) 给用户;
+        返回 (拼好的 content, 工具调用列表, 拼好的 reasoning)。
 
-        作为子生成器被 `yield from` —— 它的 return 值就是 (content, calls)。
+        thinking: 开思考→传 reasoning_effort 档位 + 放宽输出上限; 关思考→对 deepseek 显式 disabled
+                  (其思考默认开, 不显式关会照样思考)。
+        reasoning_prefix: 本轮若真有 reasoning, 在其首段前补一次分隔(跨轮思考分段用)。
+        作为子生成器被 `yield from` —— 它的 return 值就是 (content, calls, reasoning)。
         """
         extra: dict[str, Any] = {"stream": True}
         if tools:
             extra["tools"] = tools
             extra["tool_choice"] = tool_choice
+        if thinking:  # 开思考: 档位(LiteLLM→thinking enabled) + 放宽输出上限(思考额外吃 token)
+            extra["reasoning_effort"] = _THINKING_EFFORT
+            extra["max_tokens"] = max(self._max_tokens, _THINKING_MAX_TOKENS)
+        elif "deepseek" in self._model.lower():  # 关思考: deepseek 原生 disabled 才真正关掉
+            extra["extra_body"] = _THINKING_DISABLED_BODY
         parts: list[str] = []
+        reasoning_parts: list[str] = []
+        sep = reasoning_prefix  # 仅在本轮真有 reasoning 时, 于首段前补一次
         args_by_index: dict[int, str] = {}
         names_by_index: dict[int, str] = {}
         ids_by_index: dict[int, str] = {}
@@ -187,6 +226,15 @@ class LiteLLMResponder:
             if not choices:
                 continue
             delta = choices[0].delta
+            # DeepSeek 思考模式: reasoning_content 先于 content 流出
+            rc = getattr(delta, "reasoning_content", None)
+            if rc:
+                if sep:
+                    reasoning_parts.append(sep)
+                    yield ("reasoning", sep)
+                    sep = ""
+                reasoning_parts.append(rc)
+                yield ("reasoning", rc)
             text = getattr(delta, "content", None)
             if text:
                 parts.append(text)
@@ -204,7 +252,11 @@ class LiteLLMResponder:
                     args_by_index[idx] = args_by_index.get(idx, "") + fn.arguments
 
         calls = [
-            {"id": ids_by_index.get(i, f"call_{i}"), "name": names_by_index[i], "args": args_by_index.get(i, "")}
+            {
+                "id": ids_by_index.get(i, f"call_{i}"),
+                "name": names_by_index[i],
+                "args": args_by_index.get(i, ""),
+            }
             for i in sorted(names_by_index)
         ]
-        return "".join(parts), calls
+        return "".join(parts), calls, "".join(reasoning_parts)

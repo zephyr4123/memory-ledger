@@ -30,10 +30,14 @@ class FakeResponder:
     def respond(self, *, utterance: str, snapshot: str, turn: int) -> Response:
         return Response(self.reply, (self._patch(utterance, 1),))
 
+    reasoning = "先想想：她的雇主信息需要核对一下。"
+
     def stream_turn(
-        self, *, utterance: str, ctx: Any, history: Any = None
+        self, *, utterance: str, ctx: Any, history: Any = None, thinking: bool = False
     ) -> Iterator[tuple[str, Any]]:
-        # 先"查一把"(可视化用), 再回复, 再暂存一条 PATCH
+        # 开思考时先流式吐思考过程, 再"查一把"(可视化用), 再回复, 再暂存一条 PATCH
+        if thinking:
+            yield ("reasoning", self.reasoning)
         yield ("tool_call", {"id": "c0", "name": "get_contact",
                              "args": {"contact_id": ctx.focus_person_id}})
         yield ("tool_result", {"id": "c0", "name": "get_contact", "ok": True})
@@ -131,7 +135,29 @@ def test_turn_proposes_patch_then_confirm_changes_truth(client: TestClient) -> N
     msgs = client.get(f"/api/conversations/{cid}/messages").json()
     assert [m["role"] for m in msgs] == ["user", "agent"]
     assert msgs[1]["tools"][0]["name"] == "get_contact"
+    assert msgs[1]["reasoning"] == ""  # 未开思考 → 无思考过程
     assert client.get("/api/conversations").json()[0]["title"] != ""
+
+
+def test_thinking_streams_and_persists_reasoning(client: TestClient) -> None:
+    conv = client.post("/api/conversations", json={"focus_person_id": 1}).json()
+    cid = conv["id"]
+    r = client.post(
+        "/api/turns",
+        json={
+            "utterance": "她在 Stripe",
+            "conversation_id": cid,
+            "person_id": 1,
+            "thinking": True,
+        },
+    )
+    assert r.status_code == 200
+    # 思考过程作为独立事件流式吐出
+    assert _sse_event(r.text, "reasoning_delta")["text"] == FakeResponder.reasoning
+    # 落盘并随消息回看
+    msgs = client.get(f"/api/conversations/{cid}/messages").json()
+    assert msgs[1]["role"] == "agent"
+    assert msgs[1]["reasoning"] == FakeResponder.reasoning
 
 
 def test_create_person(client: TestClient) -> None:

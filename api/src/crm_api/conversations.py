@@ -48,9 +48,14 @@ def ensure_chat_schema(conn: Any) -> None:
                 role            text NOT NULL CHECK (role IN ('user', 'agent')),
                 content         text NOT NULL DEFAULT '',
                 tools_json      jsonb NOT NULL DEFAULT '[]'::jsonb,
+                reasoning       text NOT NULL DEFAULT '',
                 created_at      timestamptz NOT NULL DEFAULT now()
             )
             """
+        )
+        # 既有库补列 (CREATE IF NOT EXISTS 不会给老表加列) —— 幂等迁移
+        cur.execute(
+            "ALTER TABLE conv_message ADD COLUMN IF NOT EXISTS reasoning text NOT NULL DEFAULT ''"
         )
         cur.execute(
             "CREATE INDEX IF NOT EXISTS ix_conv_message_conv "
@@ -130,7 +135,7 @@ def delete_conversation(conn: Any, user_id: str, conv_id: int) -> bool:
 def list_messages(conn: Any, user_id: str, conv_id: int) -> list[dict[str, Any]]:
     with conn.cursor(row_factory=dict_row) as cur:
         cur.execute(
-            "SELECT id, role, content, tools_json, created_at FROM conv_message "
+            "SELECT id, role, content, tools_json, reasoning, created_at FROM conv_message "
             "WHERE conversation_id = %s AND user_id = %s ORDER BY id",
             [conv_id, user_id],
         )
@@ -140,6 +145,7 @@ def list_messages(conn: Any, user_id: str, conv_id: int) -> list[dict[str, Any]]
                 "role": r["role"],
                 "content": r["content"],
                 "tools": r["tools_json"] or [],
+                "reasoning": r["reasoning"] or "",
                 "created_at": r["created_at"],
             }
             for r in cur.fetchall()
@@ -154,12 +160,14 @@ def add_message(
     role: str,
     content: str,
     tools: list[dict[str, Any]] | None = None,
+    reasoning: str = "",
 ) -> int:
     with conn.cursor() as cur:
         cur.execute(
-            "INSERT INTO conv_message (conversation_id, user_id, role, content, tools_json) "
-            "VALUES (%s, %s, %s, %s, %s) RETURNING id",
-            [conv_id, user_id, role, content, Json(tools or [])],
+            "INSERT INTO conv_message "
+            "(conversation_id, user_id, role, content, tools_json, reasoning) "
+            "VALUES (%s, %s, %s, %s, %s, %s) RETURNING id",
+            [conv_id, user_id, role, content, Json(tools or []), reasoning],
         )
         return int(cur.fetchone()[0])
 
