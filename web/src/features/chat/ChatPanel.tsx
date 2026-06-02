@@ -1,11 +1,12 @@
 import { AnimatePresence, motion } from "framer-motion";
-import { type FormEvent, type KeyboardEvent, useEffect, useRef, useState } from "react";
+import { type FormEvent, type KeyboardEvent, useCallback, useEffect, useRef, useState } from "react";
 
 import type { ChatMessage } from "../../hooks/useCrm";
 import { valueToText } from "../../lib/format";
 import { displayValue, fieldLabel } from "../../lib/labels";
 import type { Banner } from "../../lib/types";
 import { Markdown } from "./Markdown";
+import { Reasoning } from "./Reasoning";
 import { Thinking } from "./Thinking";
 import { ToolStrip } from "./ToolStrip";
 import styles from "./ChatPanel.module.css";
@@ -18,12 +19,29 @@ interface Props {
   model: string | null;
   canSend: boolean;
   focusName: string | null;
+  thinking: boolean;
   nameOf: (id: number) => string;
   onSend: (text: string) => void;
   onResolve: (intentId: number, action: "confirm" | "reject") => void;
+  onToggleThinking: () => void;
+  onScrolled?: (scrolled: boolean) => void;
 }
 
 const EXAMPLES = ["她升任了产品总监", "他已搬去深圳", "今后改用短信联系"];
+const INPUT_MAX_PX = 168; // 输入框自动增高上限 (须与 .input / .composerCenter .input 的 max-height 一致)
+
+/* 深度思考图标 —— 四角星火 + 一点, 表"推敲/灵光" */
+function ThinkGlyph() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden>
+      <path
+        d="M8 1.5l1.25 3.25L12.5 6 9.25 7.25 8 10.5 6.75 7.25 3.5 6l3.25-1.25L8 1.5Z"
+        fill="currentColor"
+      />
+      <circle cx="12.4" cy="11.6" r="1.4" fill="currentColor" />
+    </svg>
+  );
+}
 
 function greeting(): string {
   const h = new Date().getHours();
@@ -72,19 +90,30 @@ function GateBanner({ banner, onResolve }: { banner: Banner; onResolve: Props["o
 function AgentBubble({ m, nameOf }: { m: ChatMessage; nameOf: Props["nameOf"] }) {
   const tools = m.tools ?? [];
   const busy = tools.some((t) => t.status === "running");
+  // 思考块/工具条自身即活动指示; 仅当既无思考也无正文时, 才用三点呼吸兜底
+  const showDots = !!m.streaming && !m.text && !m.reasoning;
+  // 结束却无正文(只思考过/只调了工具) → 给一句占位, 不留"无答复死角"
+  const noReply = !m.streaming && !m.text && (!!m.reasoning || tools.length > 0);
   return (
     <>
+      {m.reasoning ? (
+        <Reasoning text={m.reasoning} live={!!m.streaming} answered={!!m.text} />
+      ) : null}
       {tools.length > 0 && <ToolStrip tools={tools} nameOf={nameOf} />}
-      <div className={styles.bubble}>
-        {m.text ? (
-          <>
-            <Markdown text={m.text} />
-            {m.streaming && <span className={styles.caret} />}
-          </>
-        ) : m.streaming ? (
+      {m.text ? (
+        <div className={styles.bubble}>
+          <Markdown text={m.text} />
+          {m.streaming && <span className={styles.caret} />}
+        </div>
+      ) : showDots ? (
+        <div className={styles.bubble}>
           <Thinking label={busy ? "正在检索记忆" : "正在思考"} />
-        ) : null}
-      </div>
+        </div>
+      ) : noReply ? (
+        <div className={styles.bubble}>
+          <span className={styles.noReply}>（小本整理了思路，未给出文字结论）</span>
+        </div>
+      ) : null}
     </>
   );
 }
@@ -97,9 +126,12 @@ export function ChatPanel({
   model,
   canSend,
   focusName,
+  thinking,
   nameOf,
   onSend,
   onResolve,
+  onToggleThinking,
+  onScrolled,
 }: Props) {
   const [draft, setDraft] = useState("");
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -107,16 +139,30 @@ export function ChatPanel({
   const live = llm === "live";
   const empty = messages.length === 0;
 
+  // 顶栏柔影由对话滚动驱动; 用 ref 去抖 —— 仅在布尔翻转时上报, 避免每次 scroll 都触发父级 setState
+  const scrolledRef = useRef(false);
+  const reportScroll = useCallback(
+    (v: boolean) => {
+      if (v !== scrolledRef.current) {
+        scrolledRef.current = v;
+        onScrolled?.(v);
+      }
+    },
+    [onScrolled],
+  );
+
+  // 滚到底 + 在同一处校准顶栏柔影态(切会话/迎接屏/短对话皆覆盖, 不再绑死在 empty 上)
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
-  }, [messages, banners]);
+    reportScroll((scrollRef.current?.scrollTop ?? 0) > 4);
+  }, [messages, banners, reportScroll]);
 
-  // 自动增高: 随内容长高, 封顶 140px (ChatGPT 式)
+  // 自动增高: 随内容长高, 封顶 INPUT_MAX_PX (须与 CSS .input max-height 同步)
   useEffect(() => {
     const el = taRef.current;
     if (!el) return;
     el.style.height = "auto";
-    el.style.height = `${Math.min(el.scrollHeight, 140)}px`;
+    el.style.height = `${Math.min(el.scrollHeight, INPUT_MAX_PX)}px`;
   }, [draft, empty]);
 
   const submit = () => {
@@ -154,14 +200,26 @@ export function ChatPanel({
           onChange={(e) => setDraft(e.target.value)}
           onKeyDown={onKey}
         />
-        <button
-          className={styles.send}
-          type="submit"
-          disabled={!draft.trim() || streaming || !canSend}
-          aria-label="发送"
-        >
-          {streaming ? <span className={styles.sending} /> : "↑"}
-        </button>
+        <div className={styles.toolbar}>
+          <button
+            type="button"
+            className={`${styles.think} ${thinking ? styles.thinkOn : ""}`}
+            onClick={onToggleThinking}
+            aria-pressed={thinking}
+            title={thinking ? "深度思考已开启 —— 小本会展示推敲过程" : "开启深度思考"}
+          >
+            <ThinkGlyph />
+            <span>深度思考</span>
+          </button>
+          <button
+            className={styles.send}
+            type="submit"
+            disabled={!draft.trim() || streaming || !canSend}
+            aria-label="发送"
+          >
+            {streaming ? <span className={styles.sending} /> : "↑"}
+          </button>
+        </div>
       </div>
     </form>
   );
@@ -215,7 +273,11 @@ export function ChatPanel({
       ) : (
         // ── 对话中: 消息流 + 闸门 + 沉底输入条 ──
         <>
-          <div className={styles.scroll} ref={scrollRef}>
+          <div
+            className={styles.scroll}
+            ref={scrollRef}
+            onScroll={(e) => reportScroll(e.currentTarget.scrollTop > 4)}
+          >
             {messages.map((m) => (
               <motion.div
                 key={m.id}

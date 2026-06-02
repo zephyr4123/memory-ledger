@@ -40,6 +40,7 @@ export default function App() {
   const [snapOpen, setSnapOpen] = useState(true);
   const [navOpen, setNavOpen] = useState(true);
   const [memOpen, setMemOpen] = useState(true);
+  const [chatScrolled, setChatScrolled] = useState(false);
 
   const submitContact = async (data: PersonInput) => {
     if (editor?.mode === "edit" && crm.selectedId != null) {
@@ -58,7 +59,7 @@ export default function App() {
     <MotionConfig reducedMotion="user">
       <div className={styles.shell}>
         <motion.header
-          className={styles.topbar}
+          className={`${styles.topbar} ${chatScrolled ? styles.topbarScrolled : ""}`}
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
@@ -120,9 +121,12 @@ export default function App() {
               model={crm.health?.model ?? null}
               canSend={crm.activeConvId != null}
               focusName={focusName}
+              thinking={crm.thinking}
               nameOf={nameOf}
               onSend={crm.sendTurn}
               onResolve={crm.resolveBanner}
+              onToggleThinking={crm.toggleThinking}
+              onScrolled={setChatScrolled}
             />
           </section>
 
@@ -143,6 +147,8 @@ export default function App() {
                 />
               </div>
 
+              <div className={styles.seam} />
+
               <div className={styles.personSection}>
                 <PersonCard
                   person={crm.person}
@@ -158,6 +164,8 @@ export default function App() {
                   </div>
                 )}
               </div>
+
+              <div className={styles.seam} />
 
               <div className={styles.ledgerSection}>
                 <div className={styles.ledgerHead}>

@@ -14,7 +14,14 @@
   gap: 24px;
   flex: none;
   padding: 14px 22px;
-  border-bottom: 1px solid var(--line);
+  position: relative;
+  z-index: 2;
+  background: var(--bg);
+  transition: box-shadow var(--dur) var(--ease);
+}
+/* 内容下滚时, 顶栏柔影浮起(替代硬 border-bottom) —— 由对话滚动驱动 */
+.topbarScrolled {
+  box-shadow: var(--shadow-topbar);
 }
 .topLeft {
   display: flex;
@@ -123,13 +130,12 @@
     width var(--dur) var(--ease),
     opacity var(--dur) var(--ease);
 }
+/* 区域分隔不再用硬发丝边 —— 改由中央 .stage 外投的方向性柔影来"分" */
 .navRail {
   width: 272px;
-  border-right: 1px solid var(--line);
 }
 .memRail {
   width: 404px;
-  border-left: 1px solid var(--line);
 }
 .navRail[data-open="false"],
 .memRail[data-open="false"] {
@@ -145,6 +151,8 @@
   flex-direction: column;
   min-height: 0;
   padding: 18px 14px;
+  animation: riseIn 0.5s var(--ease) both;
+  animation-delay: 0.06s;
 }
 /* 记忆栏: 横向留白由各分段自管 (人卡/账本各带 var(--pad)), 故 inner 横向不再加 padding,
    分段的 border-top 发丝线得以通栏铺满 —— 读作连续的缝, 而非内缩的小标尺。 */
@@ -157,13 +165,17 @@
   padding: 18px 0 0;
 }
 
-/* ── 中央对话画布: 比两侧暖纸略亮一档的内容台, 无边框无阴影 ── */
+/* ── 中央对话画布: 比两侧暖纸略亮一档的内容台, 向两侧外投方向性柔影 → "抬起" ──
+   阴影必须挂在 .stage (无 overflow:hidden) 上才不被折叠栏自剪; z-index 让影压在两侧之上。 */
 .stage {
   flex: 1 1 0;
   min-width: 0;
   min-height: 0;
   display: flex;
   background: var(--surface);
+  position: relative;
+  z-index: 1;
+  box-shadow: var(--shadow-stage-left), var(--shadow-stage-right);
 }
 
 /* ── 记忆栏内部分段 ── */
@@ -173,6 +185,8 @@
   align-items: baseline;
   gap: 12px;
   padding: 0 var(--pad) 14px;
+  animation: riseIn 0.5s var(--ease) both;
+  animation-delay: 0.12s;
 }
 .memHint {
   font-size: 12px;
@@ -181,6 +195,15 @@
 .strip {
   flex: none;
   padding: 0 var(--pad) 16px;
+  animation: riseIn 0.5s var(--ease) both;
+  animation-delay: 0.16s;
+}
+
+/* 羽化缝线 —— 两端淡出的渐变细线, 替代硬发丝分隔, 读作"连续的缝"而非割裂线 */
+.seam {
+  flex: none;
+  height: 1px;
+  background: var(--seam);
 }
 
 /* 人卡分段: 封顶 46%, 再长也给「变更记录」留出至少一半 (超出则段内滚动)。 */
@@ -189,7 +212,8 @@
   min-height: 0;
   max-height: 46%;
   overflow: auto;
-  border-top: 1px solid var(--line);
+  animation: riseIn 0.5s var(--ease) both;
+  animation-delay: 0.2s;
 }
 /* 变更记录分段: 吃掉剩余高度; 自身为 flex 列容器, 内部筛选条固定、列表独立滚动。 */
 .ledgerSection {
@@ -198,16 +222,37 @@
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  border-top: 1px solid var(--line);
+  animation: riseIn 0.5s var(--ease) both;
+  animation-delay: 0.24s;
 }
 .ledgerHead {
   flex: none;
   padding: 15px var(--pad) 0;
 }
 .scrubber {
+  position: relative;
   margin: 0 var(--pad) var(--pad);
   padding-top: 20px;
-  border-top: 1px solid var(--line);
+}
+.scrubber::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: var(--seam);
+}
+
+@keyframes riseIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 /* ── 窄屏: 纵向堆叠, 发丝线转为收底; 折叠态强制展开, 三区(含闸门)全部可达 ── */
@@ -219,6 +264,11 @@
   }
   .tagline {
     display: none;
+  }
+  /* 窄屏整页滚动 → 顶栏吸顶, 滚动柔影才有意义(否则随页滚走) */
+  .topbar {
+    position: sticky;
+    top: 0;
   }
   .main {
     flex-direction: column;
@@ -239,8 +289,10 @@
   .navInner {
     min-height: 240px;
   }
+  /* 纵向堆叠时不投左右向柔影(会落到屏幕边外/邻区显脏), 靠收底发丝线分隔 */
   .stage {
     min-height: 60vh;
+    box-shadow: none;
   }
   .personSection {
     max-height: none;

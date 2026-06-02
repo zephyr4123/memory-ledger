@@ -19,6 +19,7 @@ export interface ChatMessage {
   role: "user" | "agent";
   text: string;
   tools?: ToolEvent[];
+  reasoning?: string;
   streaming?: boolean;
 }
 
@@ -30,6 +31,7 @@ const serverToChat = (m: ConvMessage): ChatMessage => ({
   role: m.role,
   text: m.content,
   tools: m.tools ?? [],
+  reasoning: m.reasoning ?? "",
 });
 
 function upsertTool(tools: ToolEvent[] | undefined, ev: ToolEvent): ToolEvent[] {
@@ -65,6 +67,7 @@ export function useCrm() {
   const [activeConvId, setActiveConvId] = useState<number | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [streaming, setStreaming] = useState(false);
+  const [thinking, setThinking] = useState(false); // 深度思考开关 (会话级偏好)
 
   // 闸门由账本派生: 只在"现在"视图展示(回看过去时不诱导确认历史提案)。
   const banners = useMemo<Banner[]>(
@@ -240,8 +243,10 @@ export function useCrm() {
         setMessages((m) => m.map((msg) => (msg.id === aid ? fn(msg) : msg)));
 
       try {
-        await streamTurn(trimmed, activeConvId, selectedId, {
+        await streamTurn(trimmed, activeConvId, selectedId, thinking, {
           onDelta: (t) => patchAgent((msg) => ({ ...msg, text: msg.text + t })),
+          onReasoning: (t) =>
+            patchAgent((msg) => ({ ...msg, reasoning: (msg.reasoning ?? "") + t })),
           onToolCall: (ev) =>
             patchAgent((msg) => ({
               ...msg,
@@ -278,7 +283,7 @@ export function useCrm() {
         setStreaming(false);
       }
     },
-    [activeConvId, selectedId, streaming, refreshPeople, refreshConversations],
+    [activeConvId, selectedId, streaming, thinking, refreshPeople, refreshConversations],
   );
 
   // 确认闸门 / 消除拿不准: 采纳(confirm) 或 不改/消除(reject) → 刷新真相 + 账本 (闸门重算)
@@ -319,6 +324,8 @@ export function useCrm() {
     messages,
     banners,
     streaming,
+    thinking,
+    toggleThinking: () => setThinking((t) => !t),
     sendTurn,
     resolveBanner,
   };

@@ -108,6 +108,7 @@ export interface ConvMessage {
   role: "user" | "agent";
   content: string;
   tools: ToolEvent[];
+  reasoning?: string;
   created_at: string;
 }
 

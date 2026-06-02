@@ -67,4 +67,26 @@
   --shadow-card: 0 1px 2px rgba(42, 39, 34, 0.04), 0 10px 28px -16px rgba(42, 39, 34, 0.18);
   --shadow-lift: 0 2px 6px rgba(42, 39, 34, 0.06), 0 22px 48px -20px rgba(42, 39, 34, 0.26);
   --shadow-gate: 0 2px 8px rgba(116, 72, 15, 0.1), 0 24px 50px -22px rgba(116, 72, 15, 0.36);
+
+  /* ── 连续画布的"抬起"深度: 用方向性柔影代替硬发丝线分隔区域(零辉光, 漫射) ──
+     必须挂在中央 .stage 上向两侧外投 —— 它是三区里唯一无 overflow:hidden 的元素,
+     从它外投的阴影才不会被折叠栏自剪。 */
+  --shadow-stage-left: -18px 0 40px -26px rgba(42, 39, 34, 0.2);
+  --shadow-stage-right: 18px 0 40px -26px rgba(42, 39, 34, 0.2);
+  /* 顶栏滚动后浮起的柔影(默认无, 内容下滚才出现) */
+  --shadow-topbar: 0 1px 2px rgba(42, 39, 34, 0.04), 0 16px 30px -18px rgba(42, 39, 34, 0.2);
+  /* 羽化缝线: 两端按比例淡出的渐变细线(用 % 而非绝对像素 → 各栏宽下淡出比例一致),
+     替代硬 1px 分隔, 读作"连续的缝"。可作 background 或 border-image。 */
+  --seam: linear-gradient(
+    to right,
+    transparent,
+    rgba(42, 39, 34, 0.1) 14%,
+    rgba(42, 39, 34, 0.1) 86%,
+    transparent
+  );
+  /* 大气输入框: 静态浮起 + 聚焦柔升。聚焦反馈只用"柔和漫射"(零辉光纪律):
+     一层极淡鼠尾草漫射晕(blur≫spread → 是晕非描边)+ 加深的墨色柔影, 配 translateY(-2px)。 */
+  --shadow-input: 0 2px 10px rgba(42, 39, 34, 0.05), 0 24px 52px -24px rgba(42, 39, 34, 0.24);
+  --shadow-input-focus: 0 0 12px 1px rgba(111, 143, 106, 0.1), 0 6px 18px rgba(42, 39, 34, 0.08),
+    0 30px 60px -22px rgba(42, 39, 34, 0.3);
 }

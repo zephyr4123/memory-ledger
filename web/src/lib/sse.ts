@@ -1,12 +1,14 @@
 // 发起一轮对话并解析 SSE 流:
-//   reply_delta  实时回复 token
-//   tool_call    小本开始调某把工具 (name + 解析好的 args) —— 让用户看见它真在查
-//   tool_result  那把工具有了结果 (ok 与否)
-//   done         终态 (闸门 / 真相 / 账本)
+//   reasoning_delta  深度思考 token (开思考时, 折叠展示思考过程)
+//   reply_delta      实时回复 token
+//   tool_call        小本开始调某把工具 (name + 解析好的 args) —— 让用户看见它真在查
+//   tool_result      那把工具有了结果 (ok 与否)
+//   done             终态 (闸门 / 真相 / 账本)
 import type { ToolEvent, TurnDone } from "./types";
 
 interface TurnHandlers {
   onDelta: (text: string) => void;
+  onReasoning: (text: string) => void;
   onToolCall: (ev: { id: string; name: string; args?: Record<string, unknown> }) => void;
   onToolResult: (ev: { id: string; ok: boolean }) => void;
   onDone: (done: TurnDone) => void;
@@ -31,6 +33,7 @@ export async function streamTurn(
   utterance: string,
   conversationId: number,
   personId: number | null,
+  thinking: boolean,
   handlers: TurnHandlers,
   signal?: AbortSignal,
 ): Promise<void> {
@@ -41,6 +44,7 @@ export async function streamTurn(
       utterance,
       conversation_id: conversationId,
       person_id: personId ?? undefined,
+      thinking,
     }),
     signal,
   });
@@ -65,6 +69,8 @@ export async function streamTurn(
       if (!parsed) continue;
       if (parsed.event === "reply_delta") {
         handlers.onDelta((parsed.data as { text: string }).text);
+      } else if (parsed.event === "reasoning_delta") {
+        handlers.onReasoning((parsed.data as { text: string }).text);
       } else if (parsed.event === "tool_call") {
         handlers.onToolCall(parsed.data as Pick<ToolEvent, "id" | "name" | "args">);
       } else if (parsed.event === "tool_result") {

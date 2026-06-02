@@ -1,0 +1,59 @@
+/* 深度思考披露 —— 鼠尾草(小本的"声音"色)细缘, 克制安静, 不喧宾夺主 */
+.wrap {
+  margin-bottom: 2px;
+  padding-left: 13px;
+  border-left: 2px solid var(--sage-line);
+}
+.active {
+  border-left-color: var(--sage);
+}
+
+.head {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 2px 0;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--sage-ink);
+}
+.spark {
+  font-size: 11px;
+  color: var(--sage);
+}
+.pulse {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--sage);
+  animation: thinkPulse 1.3s var(--ease) infinite;
+}
+@keyframes thinkPulse {
+  0%,
+  100% {
+    opacity: 0.3;
+    transform: scale(0.85);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+.chev {
+  font-size: 10px;
+  color: var(--ink-faint);
+  transition: transform var(--dur) var(--ease);
+}
+.chevOpen {
+  transform: rotate(90deg);
+}
+
+.text {
+  padding: 8px 0 10px;
+  font-size: 12.5px;
+  line-height: 1.65;
+  color: var(--ink-dim);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
