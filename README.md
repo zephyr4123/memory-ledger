@@ -15,7 +15,7 @@
 
 <br><br>
 
-<img src="docs/screenshots/01-landing.png" width="860" alt="念念手记 · 迎接屏">
+<img src="docs/screenshots/01-landing.jpg" width="860" alt="念念手记 · 迎接屏">
 
 </div>
 
@@ -40,7 +40,7 @@
 点「新建对话」开一个**全新空白线程**,问一句"她现在什么职位?",小本照样调 `get_contact` 直接答 **CTO**。记忆是按**人**全局留存、**跨会话共享**的 —— 换个对话窗口照样记得。
 
 <div align="center">
-<img src="docs/screenshots/05-cross-session-recall.png" width="860" alt="全新会话里照样回忆出 CTO">
+<img src="docs/screenshots/05-cross-session-recall.jpg" width="860" alt="全新会话里照样回忆出 CTO">
 <br><sub>左栏新开的空白线程 · 右栏人卡 = Globex / CTO · 答案直接命中,无需任何上文</sub>
 </div>
 
@@ -49,7 +49,7 @@
 回答之前,小本先冒出**流式工具条**(`get_contact` running → done),再据此作答。
 
 <div align="center">
-<img src="docs/screenshots/02-streaming-tools.png" width="820" alt="流式工具条 get_contact">
+<img src="docs/screenshots/02-streaming-tools.jpg" width="820" alt="流式工具条 get_contact">
 <br><sub>先检索记忆,后开口 —— 这些都是"之前会话"记下的底子</sub>
 </div>
 
@@ -58,7 +58,7 @@
 说一句"她升任 CTO 了" → 改既有字段 = 高危,底部弹出**陶土色确认闸门**,点头才落库(human-in-the-loop)。
 
 <div align="center">
-<img src="docs/screenshots/03-confirm-gate.png" width="820" alt="陶土色确认闸门:职位 → CTO">
+<img src="docs/screenshots/03-confirm-gate.jpg" width="820" alt="陶土色确认闸门:职位 → CTO">
 <br><sub>「职位 → CTO ‹暂不 / 确认更改›」· 没你点头,记忆不生效</sub>
 </div>
 
@@ -69,8 +69,8 @@
 <div align="center">
 <table>
 <tr>
-<td align="center"><img src="docs/screenshots/06-ledger-chain.png" width="398" alt="变更链:Globex ← 蓝湖科技 ← 晨星科技"></td>
-<td align="center"><img src="docs/screenshots/06-ledger-provenance.png" width="398" alt="逐字溯源:原话 + 把握度 + 来源"></td>
+<td align="center"><img src="docs/screenshots/06-ledger-chain.jpg" width="398" alt="变更链:Globex ← 蓝湖科技 ← 晨星科技"></td>
+<td align="center"><img src="docs/screenshots/06-ledger-provenance.jpg" width="398" alt="逐字溯源:原话 + 把握度 + 来源"></td>
 </tr>
 <tr>
 <td align="center"><sub>📜 <b>变更链</b><br>公司 Globex ← 蓝湖科技 ← 晨星科技(supersede)<br>+ 备注(ANNOTATE)+ 基线(ASSERT)</sub></td>
@@ -86,9 +86,9 @@
 <div align="center">
 <table>
 <tr>
-<td align="center" width="33%"><img src="docs/screenshots/07-time-travel-1-origin.png" width="240" alt="时光机:晨星科技"></td>
-<td align="center" width="33%"><img src="docs/screenshots/07-time-travel-2-mid.png" width="240" alt="时光机:蓝湖科技"></td>
-<td align="center" width="33%"><img src="docs/screenshots/07-time-travel-3-now.png" width="240" alt="时光机:Globex"></td>
+<td align="center" width="33%"><img src="docs/screenshots/07-time-travel-1-origin.jpg" width="240" alt="时光机:晨星科技"></td>
+<td align="center" width="33%"><img src="docs/screenshots/07-time-travel-2-mid.jpg" width="240" alt="时光机:蓝湖科技"></td>
+<td align="center" width="33%"><img src="docs/screenshots/07-time-travel-3-now.jpg" width="240" alt="时光机:Globex"></td>
 </tr>
 <tr>
 <td align="center"><sub><b>晨星科技</b><br>由 <b>1</b> 条记录合成<br>· 最初 ·</sub></td>
@@ -104,7 +104,7 @@
 链条不只记成功的改动 —— 被你否掉的(REJECTED)、需要核实的(FLAG)同样完整可审计。
 
 <div align="center">
-<img src="docs/screenshots/08-rejected-flag.png" width="640" alt="未采纳 + 待核实">
+<img src="docs/screenshots/08-rejected-flag.jpg" width="640" alt="未采纳 + 待核实">
 <br><sub>「所在地 → 柏林」未采纳 · 「搬迁尚未确认」⚠ 待核实 —— 5-state 状态机全留底</sub>
 </div>
 
@@ -115,8 +115,8 @@
 <div align="center">
 <table>
 <tr>
-<td align="center"><img src="docs/screenshots/04-deep-thinking-1.png" width="410" alt="深度思考过程展开"></td>
-<td align="center"><img src="docs/screenshots/04-deep-thinking-2.png" width="410" alt="深度思考收束成建议"></td>
+<td align="center"><img src="docs/screenshots/04-deep-thinking-1.jpg" width="410" alt="深度思考过程展开"></td>
+<td align="center"><img src="docs/screenshots/04-deep-thinking-2.jpg" width="410" alt="深度思考收束成建议"></td>
 </tr>
 <tr>
 <td align="center"><sub>推理流式展开</sub></td>
