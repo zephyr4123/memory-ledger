@@ -2,6 +2,10 @@
 
 > 不是 RAG, 不是 vector. 是一份"按状态机记账、可时间旅行、有溯源"的 agent memory 设计文档 + 模板代码.
 
+<p align="center">
+  <img src="docs/readme-hero.jpg" alt="念念手记 — 你讲述，小本为你记录；修改既有信息前，先经你确认" width="100%" />
+</p>
+
 ## 这是什么
 
 一句话: **把 agent 跟用户的每一次"事实陈述 / 字段改动 / 注释 / 标疑" 记成一条 intent, 写进同一张账本表 (`l15_change_intents`), 然后通过 PG view 函数 (`effective_*_at(as_of_ts)`) 按时间戳合成"截至此刻的真相", 给 agent 下一轮当 context.**
@@ -66,9 +70,23 @@ docker compose up --build  # 起 db + api + web
 docker compose down -v     # 用完清掉 (含数据卷)
 ```
 
-这是一个**对话式、真 LLM 驱动**的 Personal-CRM 记忆台(代号 Chronograph,暗色仪表台 UI):
-你对它说一句话 → LLM 实时回复并**产出结构化 intent** → **高危改动先挂 amber 确认闸门等你拍板** →
-你确认后才落库 → 拖**时间轴时光机**回看任意历史时点的真相 → 每条事实带**逐字 source_quote 溯源**。
+这是一个**对话式、真 LLM 驱动**的 Personal-CRM 记忆台。界面是「**念念手记 ✎**」—— 一片暖纸日光的连续画布,
+你对话的记忆管家叫「**小本**」:你对它说一句话 → LLM 实时回复并**产出结构化 intent** →
+**高危改动先挂确认闸门等你拍板** → 你确认后才落库 → 拖**时光机**回看任意历史时点的真相 →
+每条事实带**逐字 source_quote 溯源**。
+
+<table>
+<tr>
+<td width="50%" valign="top" align="center">
+  <img src="docs/readme-spring.jpg" alt="逐字溯源" width="100%" /><br/>
+  <sub><b>逐字溯源</b> · 每条事实都能回到它的源头原话</sub>
+</td>
+<td width="50%" valign="top" align="center">
+  <img src="docs/readme-stones.jpg" alt="确认闸门" width="100%" /><br/>
+  <sub><b>确认闸门</b> · 改动既有信息前,先经你确认才落库</sub>
+</td>
+</tr>
+</table>
 
 | 服务 | 端口 | 说明 |
 |---|---|---|
