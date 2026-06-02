@@ -40,3 +40,6 @@ htmlcov/
 
 # Claude Code session/scheduler state (machine-local, not source)
 .claude/
+
+# Memory migration bundle (machine-local transfer artifact, not source)
+/memory-export/
