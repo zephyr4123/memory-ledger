@@ -16,7 +16,8 @@
   padding: 14px 22px;
   position: relative;
   z-index: 2;
-  background: var(--bg);
+  /* 日光沿顶栏自上而下轻抚 —— 一抹暖纸的高光, 让页眉不再死板平铺(零辉光, 纯色阶) */
+  background: linear-gradient(180deg, var(--surface-bright) 0%, var(--surface) 48%, var(--bg) 100%);
   transition: box-shadow var(--dur) var(--ease);
 }
 /* 内容下滚时, 顶栏柔影浮起(替代硬 border-bottom) —— 由对话滚动驱动 */
@@ -70,6 +71,15 @@
   letter-spacing: 0.04em;
 }
 
+/* 品牌小标: 暖纸底图,奶白边自然融进顶栏暖纸,留下书本与叶 —— 不做描边卡,纪律守住 */
+.logoMark {
+  flex: none;
+  width: 30px;
+  height: 30px;
+  object-fit: contain;
+  margin-right: -4px;
+  user-select: none;
+}
 .wordmark {
   font-size: 19px;
   font-weight: 600;
@@ -172,7 +182,8 @@
   min-width: 0;
   min-height: 0;
   display: flex;
-  background: var(--surface);
+  /* 顶部一缕日光自天窗洒下, 向下没入内容台 —— 给对话画布纵向的空气感(色阶, 非辉光) */
+  background: linear-gradient(180deg, var(--surface-bright) 0%, var(--surface) 24%);
   position: relative;
   z-index: 1;
   box-shadow: var(--shadow-stage-left), var(--shadow-stage-right);

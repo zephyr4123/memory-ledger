@@ -53,6 +53,17 @@ function greeting(): string {
   return "夜深了";
 }
 
+/* 迎接屏底部的氛围风景: 每次进入新对话随机换一张(七景轮换), 让所有景都有机会露面;
+   自下而上羽化没入暖纸。pickScene 接上一张避免连抽同一张。 */
+const SCENES = ["morning", "midday", "afternoon", "evening", "night", "spring", "autumn"];
+function pickScene(prev?: string): string {
+  let url = prev;
+  while (url === prev) {
+    url = `/img/scenes/${SCENES[Math.floor(Math.random() * SCENES.length)]}.jpg`;
+  }
+  return url as string;
+}
+
 /* 确认闸门 —— 全站唯一的"实心陶土块": 高危改动落盘前, 等你签字。 */
 function GateBanner({ banner, onResolve }: { banner: Banner; onResolve: Props["onResolve"] }) {
   return (
@@ -138,6 +149,18 @@ export function ChatPanel({
   const taRef = useRef<HTMLTextAreaElement>(null);
   const live = llm === "live";
   const empty = messages.length === 0;
+
+  // 迎接屏风景: 进入空对话(草稿态)时换一张, 之后保持稳定(不随输入重渲染而闪烁)
+  const sceneRef = useRef<string>(pickScene());
+  const [scene, setScene] = useState(sceneRef.current);
+  const wasEmpty = useRef(empty);
+  useEffect(() => {
+    if (empty && !wasEmpty.current) {
+      sceneRef.current = pickScene(sceneRef.current);
+      setScene(sceneRef.current);
+    }
+    wasEmpty.current = empty;
+  }, [empty]);
 
   // 顶栏柔影由对话滚动驱动; 用 ref 去抖 —— 仅在布尔翻转时上报, 避免每次 scroll 都触发父级 setState
   const scrolledRef = useRef(false);
@@ -243,12 +266,18 @@ export function ChatPanel({
       {empty ? (
         // ── 新对话: 整体居中的迎接屏 (Claude 式) ──
         <div className={styles.landing}>
+          <div
+            className={styles.landingScene}
+            style={{ backgroundImage: `url(${scene})` }}
+            aria-hidden
+          />
           <motion.div
             className={styles.hero}
             initial={{ opacity: 0, y: 14 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1], delay: 0.05 }}
           >
+            <img className={styles.heroMascot} src="/img/brand/mascot.png" alt="小本" />
             <p className={styles.greeting}>{greeting()}</p>
             <h1 className={`display ${styles.heroTitle}`}>讲述近况，小本为你逐一记录</h1>
           </motion.div>
@@ -271,7 +300,7 @@ export function ChatPanel({
           </motion.div>
         </div>
       ) : (
-        // ── 对话中: 消息流 + 闸门 + 沉底输入条 ──
+        // ── 对话中: 消息流 + 闸门 + 沉底输入条 (画布保持干净暖纸, 不垫照片; 纵深交给顶部日光) ──
         <>
           <div
             className={styles.scroll}

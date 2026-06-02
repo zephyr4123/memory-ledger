@@ -73,6 +73,7 @@ export default function App() {
             >
               <IconPanelLeft />
             </button>
+            <img className={styles.logoMark} src="/img/brand/mark.png" alt="" aria-hidden />
             <span className={styles.wordmark}>
               念念手记<span className={styles.glyph}>✎</span>
             </span>

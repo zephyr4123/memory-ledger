@@ -128,7 +128,12 @@ export function ConversationList({
           })}
         </AnimatePresence>
 
-        {conversations.length === 0 && <div className={styles.empty}>暂无对话</div>}
+        {conversations.length === 0 && (
+          <div className={styles.empty}>
+            <img className={styles.emptyArt} src="/img/empty/conversations.jpg" alt="" aria-hidden />
+            <p>还没有对话</p>
+          </div>
+        )}
       </nav>
     </div>
   );

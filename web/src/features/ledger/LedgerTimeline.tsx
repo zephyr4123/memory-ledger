@@ -82,7 +82,14 @@ export function LedgerTimeline({ events }: { events: LedgerEvent[] }) {
 
       {ordered.length === 0 ? (
         <div className={styles.empty}>
-          {events.length === 0 ? "尚无记录 —— 与小本交谈即可生成。" : "当前筛选下暂无记录。"}
+          {events.length === 0 ? (
+            <>
+              <img className={styles.emptyArt} src="/img/empty/ledger.jpg" alt="" aria-hidden />
+              <p className={styles.emptyText}>尚无记录 —— 与小本交谈即可生成。</p>
+            </>
+          ) : (
+            <p className={styles.emptyText}>当前筛选下暂无记录。</p>
+          )}
         </div>
       ) : (
         <ol className={styles.timeline}>

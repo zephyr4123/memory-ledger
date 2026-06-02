@@ -44,7 +44,12 @@ function summaryLine(p: Person): string {
 
 export function PersonCard({ person, asOf, collapsed, onToggle, onEdit, onResolve }: Props) {
   if (!person) {
-    return <div className={styles.empty}>选择一位联系人，查看小本为你记录的内容。</div>;
+    return (
+      <div className={styles.empty}>
+        <img className={styles.emptyArt} src="/img/empty/person.jpg" alt="" aria-hidden />
+        <p className={styles.emptyText}>选择一位联系人，查看小本为你记录的内容。</p>
+      </div>
+    );
   }
   const past = asOf != null;
   return (

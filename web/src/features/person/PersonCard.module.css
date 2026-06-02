@@ -1,4 +1,5 @@
 .card {
+  position: relative;
   display: flex;
   flex-direction: column;
   gap: 16px;
@@ -50,9 +51,26 @@
   color: var(--clay-ink);
   font-weight: 600;
 }
-/* 时光机回到过去: 整张人卡极淡陶土染色, 提示"这是旧真相" */
+/* 时光机回到过去: 极淡陶土染色 + 一抹秋日远景没入卡面, 读作"这是旧时光的真相" */
 .cardPast {
   background: var(--clay-tint);
+}
+.cardPast::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: url("/img/scenes/autumn.jpg") center / cover;
+  opacity: 0.16;
+  z-index: 0;
+  pointer-events: none;
+  -webkit-mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 1), rgba(0, 0, 0, 0.25));
+  mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 1), rgba(0, 0, 0, 0.25));
+}
+/* 过去态: 内容浮于秋色之上 (秋景在卡背景与文字之间) */
+.cardPast > * {
+  position: relative;
+  z-index: 1;
 }
 
 .topline {
@@ -248,12 +266,28 @@
 }
 
 .empty {
-  display: grid;
-  place-items: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
   min-height: 200px;
-  padding: var(--pad);
+  padding: 28px var(--pad);
   color: var(--ink-faint);
   font-size: 14px;
+  text-align: center;
+}
+/* 空态静物: 窗边摊开的手账 —— 边缘羽化没入纸面, 不做描边卡 */
+.emptyArt {
+  width: clamp(150px, 64%, 220px);
+  height: auto;
+  border-radius: var(--r-card);
+  -webkit-mask-image: radial-gradient(ellipse at center, #000 58%, transparent 100%);
+  mask-image: radial-gradient(ellipse at center, #000 58%, transparent 100%);
+}
+.emptyText {
+  max-width: 24ch;
+  line-height: 1.55;
 }
 
 @media (max-width: 520px) {

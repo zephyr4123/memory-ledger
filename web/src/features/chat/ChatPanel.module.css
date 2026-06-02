@@ -1,5 +1,6 @@
 /* 开放画布: 对话区不再是浮卡, 直接坐在画布上 —— 唯一浮起的是输入框与确认闸门。 */
 .panel {
+  position: relative;
   display: flex;
   flex-direction: column;
   flex: 1;
@@ -78,6 +79,7 @@
 
 /* ── 新对话迎接屏: 整体居中 ── */
 .landing {
+  position: relative;
   flex: 1;
   min-height: 0;
   display: flex;
@@ -88,8 +90,34 @@
   padding: 32px clamp(20px, 6vw, 88px);
   overflow: auto;
 }
+/* 底部氛围风景: 通栏一带, 自上而下从暖纸渐显, 内容浮于其上(z-index)。零辉光, 只是一片远景。 */
+.landingScene {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: min(42%, 340px);
+  background-size: cover;
+  background-position: center 28%;
+  opacity: 0.85;
+  pointer-events: none;
+  z-index: 0;
+  -webkit-mask-image: linear-gradient(to top, rgba(0, 0, 0, 0.9) 0%, rgba(0, 0, 0, 0.92) 46%, transparent 100%);
+  mask-image: linear-gradient(to top, rgba(0, 0, 0, 0.9) 0%, rgba(0, 0, 0, 0.92) 46%, transparent 100%);
+}
 .hero {
+  position: relative;
+  z-index: 1;
   text-align: center;
+}
+/* 小本: 迎接屏的暖意落点 —— 透明底直接浮在纸上, 不做圆框 */
+.heroMascot {
+  display: block;
+  width: 76px;
+  height: 76px;
+  object-fit: contain;
+  margin: 0 auto 18px;
+  user-select: none;
 }
 .greeting {
   font-size: 13px;
@@ -106,10 +134,14 @@
   letter-spacing: -0.015em;
 }
 .composerCenter {
+  position: relative;
+  z-index: 1;
   width: 100%;
   max-width: 720px;
 }
 .chips {
+  position: relative;
+  z-index: 1;
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
@@ -136,6 +168,8 @@
 
 /* ── 对话中: 消息流 ── */
 .scroll {
+  position: relative;
+  z-index: 1;
   flex: 1;
   min-height: 0;
   overflow: auto;
@@ -205,6 +239,8 @@
 }
 
 .gates {
+  position: relative;
+  z-index: 1;
   display: flex;
   flex-direction: column;
   gap: 8px;
@@ -311,6 +347,7 @@
 /* 沉底位 (对话中): 上方一抹淡出, 不是硬分割线 */
 .composerBottom {
   position: relative;
+  z-index: 1;
   padding: 10px var(--pad) var(--pad);
 }
 .composerBottom::before {

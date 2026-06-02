@@ -234,7 +234,25 @@
 }
 
 .empty {
-  padding: 32px var(--pad);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 28px var(--pad);
   color: var(--ink-faint);
   font-size: 14px;
+  text-align: center;
+}
+/* 空态静物: 压花与空白卡片(历书感) —— 边缘羽化没入纸面 */
+.emptyArt {
+  width: clamp(160px, 70%, 240px);
+  height: auto;
+  border-radius: var(--r-card);
+  -webkit-mask-image: radial-gradient(ellipse at center, #000 60%, transparent 100%);
+  mask-image: radial-gradient(ellipse at center, #000 60%, transparent 100%);
+}
+.emptyText {
+  max-width: 26ch;
+  line-height: 1.55;
 }
