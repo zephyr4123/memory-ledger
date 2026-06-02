@@ -4,6 +4,8 @@
 
 ### 基于关系数据库的 Agent 记忆方案 —— 以账本记录,而非向量嵌入
 
+[![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE) &nbsp;![PostgreSQL 16](https://img.shields.io/badge/PostgreSQL-16-336791?logo=postgresql&logoColor=white) &nbsp;![Python 3.12](https://img.shields.io/badge/Python-3.12-3776AB?logo=python&logoColor=white) &nbsp;![React 18](https://img.shields.io/badge/React-18-61DAFB?logo=react&logoColor=black)
+
 <p>
 将 agent 与用户关于业务实体的每次陈述记为一条 <b>typed intent</b>,写入单张<b>账本表</b>;<br>
 由纯 <b>SQL 函数</b>按时间戳<b>确定性重放</b>出任意时刻的真相。<b>读路径不含向量与 LLM。</b><br>
@@ -253,3 +255,11 @@ docker compose down -v     # 用完清掉 (含数据卷)
 
 - 文档以虚构的 **TodoAgent** 贯穿示例;模板代码业务字段均为占位符,替换 schema 即可适配自身业务
 - 复用风险自负
+
+## 📮 联系
+
+[![Email](https://img.shields.io/badge/Email-huangsuxiang5%40gmail.com-EA4335?logo=gmail&logoColor=white)](mailto:huangsuxiang5@gmail.com) &nbsp;![WeChat](https://img.shields.io/badge/WeChat-13976457218-07C160?logo=wechat&logoColor=white) &nbsp;![QQ](https://img.shields.io/badge/QQ-1736672988-12B7F5?logo=tencentqq&logoColor=white)
+
+## 📄 开源协议
+
+本项目以 **[Apache License 2.0](LICENSE)** 开源,详见根目录 [`LICENSE`](LICENSE) 与 [`NOTICE`](NOTICE)。
