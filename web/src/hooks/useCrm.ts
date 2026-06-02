@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { api } from "../lib/api";
 import { streamTurn } from "../lib/sse";
@@ -68,6 +68,10 @@ export function useCrm() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [streaming, setStreaming] = useState(false);
   const [thinking, setThinking] = useState(false); // 深度思考开关 (会话级偏好)
+  const [ready, setReady] = useState(false); // 首屏加载完成 → 可发消息 (也消除发送/加载竞态)
+  // 标记"刚在 sendTurn 里新建、并已乐观渲染首轮"的线程 id: 让随后那次切线程的空消息加载跳过一次,
+  // 否则会把正在流式的气泡冲掉。一次性消费(见切线程 effect)。
+  const freshSendRef = useRef<number | null>(null);
 
   // 闸门由账本派生: 只在"现在"视图展示(回看过去时不诱导确认历史提案)。
   const banners = useMemo<Banner[]>(
@@ -89,22 +93,23 @@ export function useCrm() {
     [],
   );
 
-  // 首屏: health + 联系人 + 对话线程(空则建一个), 选中默认焦点与活动线程
+  // 首屏: health + 联系人 + 对话线程。**不再"空则建一个"** —— 没有对话就停在草稿态
+  // (居中迎接屏), 直到用户真正发出第一句才落库(见 sendTurn), 空对话永不进历史。
   useEffect(() => {
     api.health().then(setHealth).catch(() => {});
     void (async () => {
-      const ppl = await api.people().catch(() => [] as PersonListItem[]);
-      setPeople(ppl);
-      const firstPerson = ppl[0]?.id ?? null;
-      let convs = await api.conversations().catch(() => [] as Conversation[]);
-      if (convs.length === 0) {
-        const c = await api.createConversation(firstPerson).catch(() => null);
-        if (c) convs = [c];
+      try {
+        const ppl = await api.people().catch(() => [] as PersonListItem[]);
+        setPeople(ppl);
+        const firstPerson = ppl[0]?.id ?? null;
+        const convs = await api.conversations().catch(() => [] as Conversation[]);
+        setConversations(convs);
+        const active = convs[0] ?? null;
+        setActiveConvId(active?.id ?? null); // 有历史→选最近一条; 没有→null=草稿态
+        setSelectedId(active?.focus_person_id ?? firstPerson);
+      } finally {
+        setReady(true);
       }
-      setConversations(convs);
-      const active = convs[0] ?? null;
-      setActiveConvId(active?.id ?? null);
-      setSelectedId(active?.focus_person_id ?? firstPerson);
     })();
   }, []);
 
@@ -124,6 +129,11 @@ export function useCrm() {
   useEffect(() => {
     if (activeConvId == null) {
       setMessages([]);
+      return;
+    }
+    // 刚由 sendTurn 新建的线程已乐观渲染首轮 → 跳过这一次空加载(否则冲掉流式气泡)。一次性。
+    if (freshSendRef.current === activeConvId) {
+      freshSendRef.current = null;
       return;
     }
     let cancelled = false;
@@ -159,12 +169,12 @@ export function useCrm() {
     [activeConvId, conversations],
   );
 
-  const newConversation = useCallback(async () => {
-    const c = await api.createConversation(selectedId).catch(() => null);
-    if (!c) return;
-    setConversations((cs) => [c, ...cs]);
-    setActiveConvId(c.id);
-  }, [selectedId]);
+  // 新建对话 = 进入草稿态(清空舞台, 回到居中迎接屏), **不立即落库**。
+  // 线程要等第一句真正发出时才创建(见 sendTurn) → 空对话永远不会出现在历史列表里。
+  const newConversation = useCallback(() => {
+    setActiveConvId(null);
+    setMessages([]);
+  }, []);
 
   const renameConversation = useCallback(async (id: number, title: string) => {
     const t = title.trim();
@@ -179,15 +189,10 @@ export function useCrm() {
       const rest = conversations.filter((x) => x.id !== id);
       setConversations(rest);
       if (id !== activeConvId) return;
-      if (rest.length) {
-        setActiveConvId(rest[0].id);
-      } else {
-        const c = await api.createConversation(selectedId).catch(() => null);
-        setConversations(c ? [c] : []);
-        setActiveConvId(c?.id ?? null);
-      }
+      // 删的是当前线程: 切到下一条; 一条不剩就回到草稿态(不再凭空建空对话)
+      setActiveConvId(rest[0]?.id ?? null);
     },
-    [conversations, activeConvId, selectedId],
+    [conversations, activeConvId],
   );
 
   // ── 联系人 CRUD ──
@@ -229,7 +234,20 @@ export function useCrm() {
   const sendTurn = useCallback(
     async (text: string) => {
       const trimmed = text.trim();
-      if (activeConvId == null || streaming || !trimmed) return;
+      if (streaming || !trimmed) return;
+
+      // 草稿态(尚未落库的新对话): 此刻——第一句真正发出——才创建线程, 之前不留空对话。
+      // 用本地 convId(而非 activeConvId 异步态)发起本轮, 确保拿到的就是新线程 id。
+      let convId = activeConvId;
+      if (convId == null) {
+        const created = await api.createConversation(selectedId).catch(() => null);
+        if (!created) return;
+        convId = created.id;
+        freshSendRef.current = created.id; // 见切线程 effect: 别让空加载冲掉下面的乐观气泡
+        setConversations((cs) => [created, ...cs]);
+        setActiveConvId(created.id);
+      }
+
       const aid = nextId();
       setMessages((m) => [
         ...m,
@@ -243,7 +261,7 @@ export function useCrm() {
         setMessages((m) => m.map((msg) => (msg.id === aid ? fn(msg) : msg)));
 
       try {
-        await streamTurn(trimmed, activeConvId, selectedId, thinking, {
+        await streamTurn(trimmed, convId, selectedId, thinking, {
           onDelta: (t) => patchAgent((msg) => ({ ...msg, text: msg.text + t })),
           onReasoning: (t) =>
             patchAgent((msg) => ({ ...msg, reasoning: (msg.reasoning ?? "") + t })),
@@ -324,6 +342,7 @@ export function useCrm() {
     messages,
     banners,
     streaming,
+    ready,
     thinking,
     toggleThinking: () => setThinking((t) => !t),
     sendTurn,

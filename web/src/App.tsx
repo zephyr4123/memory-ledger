@@ -119,7 +119,7 @@ export default function App() {
               streaming={crm.streaming}
               llm={crm.health?.llm ?? null}
               model={crm.health?.model ?? null}
-              canSend={crm.activeConvId != null}
+              canSend={crm.ready}
               focusName={focusName}
               thinking={crm.thinking}
               nameOf={nameOf}
