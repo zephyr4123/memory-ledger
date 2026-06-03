@@ -31,6 +31,11 @@
 
 ## 💡 概述
 
+<div align="center">
+<img src="docs/concept/01-ledger-vs-vector.jpg" width="880" alt="记忆即账本行而非向量嵌入:向量雾 → 人工闸门 → 有序账本">
+<br><sub>弥散的向量近似(左)经一道人工闸门(中),收敛为同库可查、可重放的<b>有序账本真相</b>(右)</sub>
+</div>
+
 每一次**事实陈述 / 改字段 / 注释 / 标疑**记为一条 intent,写入账本表 `l15_change_intents`。SQL 函数 `effective_*_at(as_of)` 再按时间戳重放出"截至此刻的真相"。
 
 > 跨会话记忆依赖 **SQL 与时间戳**,而非 embedding 与相似度。
@@ -46,6 +51,11 @@
 记忆即关系表中的**账本行**,召回为确定性 SQL,读路径不含向量。主流 `vector-first` 则以独立 embedding 索引承载记忆。
 
 > 差异不在**用不用数据库**(Letta、Mem0 同样跑 Postgres,存的却是向量),而在**关系库为主体、SQL 为召回、读路径无 embedding**。
+
+<div align="center">
+<img src="docs/concept/02-relational-vs-vector.jpg" width="820" alt="左 SQL 精确命中一行,右 向量近似召回一片">
+<br><sub>左:SQL <b>精确命中</b>某一行 &nbsp;·&nbsp; 右:向量索引只能给出<b>近似的一片</b> —— 确定 vs 漂移</sub>
+</div>
 
 本质是**对既有业务表的事件溯源**:intent 分 `PATCH` / `ASSERT` / `ANNOTATE` / `FLAG` 四类,由 Postgres `CHECK` 在存储层强制;账本与业务表同库共置、同事务一致。
 
@@ -71,32 +81,33 @@
 
 ## 🗺️ 核心抽象
 
-```
-                    ┌──────────────────────────────────────────────┐
-   用户/Agent 说话 →  │            l15_change_intents (账本表)         │
-                    │                                              │
-                    │  kind         = PATCH|ASSERT|ANNOTATE|FLAG    │
-                    │  status       = PROPOSED→APPLIED→SUPERSEDED  │
-                    │                          |REJECTED|EXPIRED   │
-                    │  source_layer = USER_DIRECT > L2_FORM >       │
-                    │                 L2_CHAT > L2_VOICE >          │
-                    │                 AGENT_INFERENCE               │
-                    │  source_quote (原话证据)                       │
-                    │  confidence   (0–1)                           │
-                    └────────────────────────┬─────────────────────┘
-                                             │
-                            effective_<entity>_at(as_of)
-                            ── 按时间戳确定性重放 ──
-                                             │
-                                             ▼
-                              "截至该时刻的真相" → 下一轮 LLM
-```
+intent 落账,再由 `effective_*_at(as_of)` 沿时间戳确定性重放,合成任意时刻的真相,供下一轮 LLM 取用。
+
+<div align="center">
+<img src="docs/concept/03-replay-pipeline.jpg" width="720" alt="四类 intent → 账本表 → 重放棱镜 → 当前真相 → LLM">
+<br><sub>四类 intent 汇入<b>单张账本表</b> → 沿时间戳<b>确定性重放</b> → <b>截至此刻的真相</b> → 喂给下一轮 LLM</sub>
+</div>
+
+**账本行 `l15_change_intents` 的关键字段:**
+
+| 字段 | 取值 / 含义 |
+|---|---|
+| `kind` | `PATCH` / `ASSERT` / `ANNOTATE` / `FLAG` —— DB `CHECK` 强制 4 类 |
+| `status` | `PROPOSED → APPLIED → SUPERSEDED \| REJECTED \| EXPIRED`(5-state) |
+| `source_layer` | `USER_DIRECT > L2_FORM > L2_CHAT > L2_VOICE > AGENT_INFERENCE`(权威递减) |
+| `source_quote` | 逐字截取的原话证据 |
+| `confidence` | `0–1` 把握度 |
 
 ---
 
 ## 🧠 作为 Agent Memory 基础设施
 
 账本即一层 **Agent Memory 基础设施**:可精确查询的结构化账本,而非不可读的向量。
+
+<div align="center">
+<img src="docs/concept/04-thin-tools-thick-ledger.jpg" width="620" alt="薄工具层悬于结构化账本基底,一次查询拉起完整链条">
+<br><sub><b>薄工具</b>(上)悬于<b>厚账本</b>基底(下);一次查询即拉起完整链条 —— 工具变薄,智能涌现</sub>
+</div>
 
 - **🪶 不预载记忆** —— 上下文不 dump 记忆;一次工具调用即取回完整画像:真相、溯源、存疑、变更链、任意时点。
 - **🧰 工具变薄** —— 工具仅是账本读能力的轻包装,合成与重放归基础设施,新增工具近乎零成本。
@@ -110,6 +121,11 @@
 
 - **⚙️ 确定性** —— 召回是纯 SQL,bit-for-bit 可复现、可审计。
 - **🤝 人机协同** —— 改字段须过人工闸门:agent 提议(`PROPOSED`)、人裁决(`APPLIED`),逐字出处供人复核。
+
+<div align="center">
+<img src="docs/concept/05-determinism-gate.jpg" width="840" alt="数据沿确定性轨道前行,改字段须经唯一人工闸门方生效,被拒者留痕">
+<br><sub>数据沿<b>确定性轨道</b>前行,改字段须经唯一的<b>人工闸门</b>方才生效;被拒者留痕(红)</sub>
+</div>
 
 > 模型可以越来越强,但经验与判断仍属于人。
 
@@ -156,6 +172,11 @@
 右栏「变更记录」留存每次改动:左为 supersede 链,右为逐字溯源。
 
 <div align="center">
+<img src="docs/concept/07-supersede-provenance.jpg" width="780" alt="示意:新行 supersede 旧行成链,逐字出处与把握度随附,拒绝与待核实留痕">
+<br><sub>📐 <b>示意</b> · 新行 supersede 旧行成链,逐字出处与把握度随附;拒绝 / 待核实同样留痕</sub>
+</div>
+
+<div align="center">
 <table>
 <tr>
 <td align="center"><img src="docs/screenshots/06-ledger-chain.jpg" width="398" alt="变更链:Globex ← 蓝湖科技 ← 晨星科技"></td>
@@ -171,6 +192,11 @@
 ### ⏳ as-of 时光机
 
 拖动时间轴,人卡重建该时刻的真相:晨星 → 蓝湖 → Globex,各由当时的 N 条记录经 `effective_*_at` 合成。
+
+<div align="center">
+<img src="docs/concept/06-time-travel.jpg" width="700" alt="示意:同一卡随时间由 1/2/4 条记录确定性重建">
+<br><sub>📐 <b>示意</b> · 拖动时间轴,同一张卡由当时的 <b>1 / 2 / 4</b> 条记录确定性重建</sub>
+</div>
 
 <div align="center">
 <table>
