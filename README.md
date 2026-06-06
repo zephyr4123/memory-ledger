@@ -6,6 +6,8 @@
 
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE) &nbsp;![PostgreSQL 16](https://img.shields.io/badge/PostgreSQL-16-336791?logo=postgresql&logoColor=white) &nbsp;![Python 3.12](https://img.shields.io/badge/Python-3.12-3776AB?logo=python&logoColor=white) &nbsp;![React 18](https://img.shields.io/badge/React-18-61DAFB?logo=react&logoColor=black)
 
+<sub><b>简体中文</b> &nbsp;|&nbsp; <a href="README.en.md">English</a></sub>
+
 <p>
 把每次陈述(谁说了什么、改了哪个字段)记成<b>账本表</b>里的一行 <b>typed intent</b>;<br>
 需要时,以纯 <b>SQL</b> 按时间戳把这些行重放成"此刻的真相",<b>确定且可复现</b>。<br>
